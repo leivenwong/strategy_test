@@ -12,10 +12,10 @@ def ma_strategy(data_close, result_show):
     direction = [0] * len(data_close)
     trade_times = 0
     # compute ma
-    ma_5 = data_close.rolling(5).mean()
-    ma_10 = data_close.rolling(10).mean()
+    ma_1 = data_close.rolling(5).mean()
+    ma_2 = data_close.rolling(250).mean()
     for i in range(len(data_close)):
-        if ma_5[i] >= ma_10[i]:
+        if ma_1[i] >= ma_2[i]:
             direction[i] = 1
         else:
             direction[i] = -1
@@ -41,19 +41,21 @@ def ema_strategy(data_close, result_show):
     result_show.trade_times = trade_times
     return direction
 
-def macd_strategy(data_close, result_show):
+def macd_strategy(data_close, result_show, short, long):
     # initiate variate
     direction = [0] * len(data_close)
     trade_times = 0
     # compute ma
     macd = fuc.compute_macd(data_close, 12, 26, 9)
-    ema_1 = fuc.compute_ema(data_close,8)
-    ema_2 = fuc.compute_ema(data_close,13)
+    ema_1 = fuc.compute_ema(data_close, short)
+    ema_2 = fuc.compute_ema(data_close, long)
     for i in range(len(data_close)):
         if macd[i] >= 0 and ema_1[i] > ema_2[i]:
             direction[i] = 1
-        else:
+        elif macd[i] < 0 and ema_1[i] < ema_2[i]:
             direction[i] = -1
+        else:
+            direction[i] = 0
         if direction[i] != direction[i - 1]:
             trade_times += 1
     result_show.trade_times = trade_times

@@ -31,16 +31,15 @@ target_net_value = fuc.compute_net_value(data_close, target_direction,
     ai_settings, result_show)
 target_max_retracement = result_show.max_retracement
 
-#fetch direction from strategy
-direction = strategy.macd_strategy(data_close, result_show)
+# fetch direction from strategy
+direction = strategy.macd_strategy(data_close, result_show, 5, 60)
 
-#compute result of strategy
-net_value = fuc.compute_net_value(data_close, direction, ai_settings, result_show)
+# compute result of strategy
+net_value = fuc.compute_net_value(data_close, direction, ai_settings,result_show)
 max_retracement = result_show.max_retracement
 
-#update result class
+# update result class
 result_show.update_net_value(net_value[-1])
-print(result_show.net_value)
 
 #print result
 print("Strategy net value: "+str(net_value[-1]))
@@ -51,4 +50,4 @@ print(ai_settings.fetch_table+" max retracement: "+str(target_max_retracement))
 
 #draw plot according to settings
 if ai_settings.draw_plot:
-    fuc.draw_plot(ai_settings, net_value, target_net_value,data_date)
+    fuc.draw_plot(ai_settings, net_value, target_net_value, data_date)
