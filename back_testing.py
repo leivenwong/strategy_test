@@ -7,9 +7,13 @@ from numpy.linalg import cholesky
 
 from settings import Settings
 import functions as fuc
+from result import Result
+import strategy
 
 #initiate settings
 ai_settings = Settings()
+result_show = Result()
+result_show.reset_net_value()
 
 #read raw data
 target = fuc.read_sql(ai_settings)
@@ -20,35 +24,30 @@ data_close = target.loc[0:, ai_settings.fetch_close]
 data_date = target.loc[0:, ai_settings.fetch_date]
 data_date = fuc.date_format(data_date)
 
-#compute net value of target index
+#compute result of target index
 target_profit_day = fuc.frofit_per(data_close)
 target_direction = [1] * len(data_close)
-target_net_value = fuc.compute_net_value(data_close, target_direction, ai_settings)
+target_net_value = fuc.compute_net_value(data_close, target_direction,
+    ai_settings, result_show)
+target_max_retracement = result_show.max_retracement
 
-#compute ma
-ma_20 = fuc.compute_ma(data_close, 20)
-ma_10 = fuc.compute_ma(data_close, 10)
+#fetch direction from strategy
+direction = strategy.macd_strategy(data_close, result_show)
 
-#initiate variate
-direction = [0] * len(data_close)
-trade_times = 0
+#compute result of strategy
+net_value = fuc.compute_net_value(data_close, direction, ai_settings, result_show)
+max_retracement = result_show.max_retracement
 
-#compute direction
-for i in range(len(data_close)):
-    if ma_10[i] >= ma_20[i]:
-        direction[i] = 1
-    else:
-        direction[i] = -1
-    if direction[i] != direction[i - 1]:
-        trade_times += 1
-
-#compute net value of strategy
-net_value = fuc.compute_net_value(data_close, direction, ai_settings)
+#update result class
+result_show.update_net_value(net_value[-1])
+print(result_show.net_value)
 
 #print result
 print("Strategy net value: "+str(net_value[-1]))
-print("Trade times: "+str(trade_times))
+print("Strategy max retracement: "+str(max_retracement))
+print("Trade times: "+str(result_show.trade_times))
 print(ai_settings.fetch_table+" net value: "+str(target_net_value[-1]))
+print(ai_settings.fetch_table+" max retracement: "+str(target_max_retracement))
 
 #draw plot according to settings
 if ai_settings.draw_plot:

@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 
 from settings import Settings
+from result import Result
+
 
 def read_sql(ai_settings):
     """read data from sql database"""
@@ -13,12 +15,14 @@ def read_sql(ai_settings):
     print("Out Mysql")
     return df
 
+
 def read_file(ai_settings):
     """read data from data_path"""
     ai_settings = Settings()
     file_path = ai_settings.file_path
     loads = pd.read_excel(file_path)
     return loads
+
 
 def compute_ma(data,cycle):
     """compute ma value list"""
@@ -29,11 +33,14 @@ def compute_ma(data,cycle):
         ma_cycle[i] = (sum(data[i - cycle:i])) / cycle
     return ma_cycle
 
-def compute_net_value(data, direction, ai_setting):
+
+def compute_net_value(data, direction, ai_setting, result_show):
     """compute net value list"""
-    net_value = list(range(len(data)))
+    print("begin compute net value...")
+    net_value = [0] * len(data)
     net_value[0] = 1
-    fee_mark = 0
+    max_value = 0
+    retracement = [0] * len(data)
     for i in range(1, len(data)):
         if direction[i - 1] != direction[i]:
             fee_mark = ai_setting.trade_fee
@@ -47,9 +54,12 @@ def compute_net_value(data, direction, ai_setting):
                 / data[i - 1] + 1 - fee_mark)
         else:
             net_value[i] = net_value[i - 1]
-        print("Net value: " + str(net_value[i]))
-        print("Fee: " + str(fee_mark))
+        max_value = max(net_value)
+        retracement[i] = (max_value - net_value[i]) / max_value
+    result_show.max_retracement = max(retracement)
+    print("net value compute has completed.")
     return net_value
+
 
 def frofit_per(data_close):
     """compute profit rate per day or other cycle"""
@@ -58,6 +68,7 @@ def frofit_per(data_close):
     for i in range(1, len(data_close)):
         profit_per[i] = (data_close[i] / data_close[i - 1] - 1) * 100
     return profit_per
+
 
 def set_xlable_visible(data):
     """set x lable's"visible config"""
@@ -68,9 +79,12 @@ def set_xlable_visible(data):
             label.set_visible(True)
         else:
             label.set_visible(False)
+        if ind / int(len(data) - 1) == 1:
+            label.set_visible(True)
     ax = plt.gca()
     for label in ax.xaxis.get_ticklabels():
         label.set_rotation(0)
+
 
 def date_format(data):
     """set date format which wanted"""
@@ -78,7 +92,9 @@ def date_format(data):
        data[i] = data[i][0:10]
     return  data
 
+
 def draw_plot(ai_settings, net_value, target_net_value, data_date):
+    print("waiting for plot drawing...")
     # set window size for plot
     plt.figure(dpi=128, figsize=(12, 6))
     # set data for plot
@@ -95,3 +111,29 @@ def draw_plot(ai_settings, net_value, target_net_value, data_date):
     set_xlable_visible(target_net_value)
 
     plt.show()
+
+
+def compute_std(data):
+    """compute var for data"""
+    compute_average = sum(data) / len(data)
+    var = list(range(len(data)))
+    for n in range(len(data)):
+        var[n] = (data[n] - compute_average) ** 2
+    compute_var = sum(var) / len(data)
+    return compute_var ** (1/2)
+
+def compute_ema(data,cycle):
+    ema = [0] * len(data)
+    ema[1] = data[1]
+    for i in range(2, len(data)):
+        ema[i] = (2 * data[i] + (cycle - 1) * ema[i - 1]) / (cycle + 1)
+    return (ema)
+
+def compute_macd(data, short, long, mid):
+    dif_short = compute_ema(data, short)
+    dif_long = compute_ema(data, long)
+    dif = list(map(lambda x: x[0]-x[1], zip(dif_short, dif_long)))
+    dea = compute_ema(dif, mid)
+    macd = list(map(lambda x: x[0]-x[1], zip(dif, dea)))
+    macd = [i * 2 for i in macd]
+    return macd
