@@ -64,6 +64,7 @@ print(out_long)
 print(out_net_value)
 print(out_max_retracement)
 
+#ourput result to excel
 out = pd.DataFrame()
 out['short'] = out_short
 out['long'] = out_long

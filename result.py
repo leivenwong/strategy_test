@@ -1,6 +1,7 @@
 import functions as fuc
 
 class Result():
+    """define result class"""
     def __init__(self):
         self.net_value = 1
         self.max_retracement = 0
