@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import cholesky
 
-from settings import Settings
-import functions as fuc
+from strategy_settings import Settings
+import strategy_functions as fuc
 from result import Result
 import strategy
 
@@ -32,6 +32,7 @@ long_end = 61
 cub = (short_end - short_begin) * (long_end - long_begin)
 out_net_value = [0] * cub
 out_max_retracement = [0] * cub
+out_sharp = [0] * cub
 out_short = [0] * cub
 out_long = [0] * cub
 test_mark = 0
@@ -48,6 +49,7 @@ for n in range(long_begin, long_end):
         net_value = fuc.compute_net_value(data_close, direction, ai_settings,
             result_show)
         max_retracement = result_show.max_retracement
+        std = result_show.std
 
         # update result class
         result_show.update_net_value(net_value[-1])
@@ -55,6 +57,7 @@ for n in range(long_begin, long_end):
         out_max_retracement[test_mark] = max_retracement
         out_short[test_mark] = i
         out_long[test_mark] = n
+        out_sharp[test_mark] = net_value[-1] / std
         print(str(test_mark)+" of "+str(cub))
         test_mark = test_mark + 1
 
@@ -70,6 +73,7 @@ out['short'] = out_short
 out['long'] = out_long
 out['net_value'] = out_net_value
 out['max_retracement'] = out_max_retracement
+out['sharp'] = out_sharp
 print(out)
 
 out.to_excel('learning_out.xlsx', 'Sheet1')

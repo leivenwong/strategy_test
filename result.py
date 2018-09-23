@@ -1,4 +1,4 @@
-import functions as fuc
+import strategy_functions as fuc
 
 class Result():
     """define result class"""
@@ -6,6 +6,7 @@ class Result():
         self.net_value = 1
         self.max_retracement = 0
         self.trade_times = 0
+        self.std = 0
 
     def reset_net_value(self):
         self.net_value = 1

@@ -3,7 +3,7 @@ import random as rd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 
-from settings import Settings
+from strategy_settings import Settings
 from result import Result
 
 
@@ -57,6 +57,7 @@ def compute_net_value(data, direction, ai_setting, result_show):
         max_value = max(net_value)
         retracement[i] = (max_value - net_value[i]) / max_value
     result_show.max_retracement = max(retracement)
+    result_show.std = compute_std(net_value)
     print("net value compute has completed.")
     return net_value
 
@@ -137,3 +138,7 @@ def compute_macd(data, short, long, mid):
     macd = list(map(lambda x: x[0]-x[1], zip(dif, dea)))
     macd = [i * 2 for i in macd]
     return macd
+
+def if_main(net_value):
+    if __name__ == '__main__':
+        return net_value

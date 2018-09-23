@@ -3,8 +3,8 @@ import random as rd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 
-from settings import Settings
-import functions as fuc
+from strategy_settings import Settings
+import strategy_functions as fuc
 from result import Result
 
 def ma_strategy(data_close, result_show):
@@ -49,11 +49,11 @@ def macd_strategy(data_close, result_show, short, long):
     macd = fuc.compute_macd(data_close, 12, 26, 9)
     ema_1 = fuc.compute_ema(data_close, short)
     ema_2 = fuc.compute_ema(data_close, long)
-    ema_250 = fuc.compute_ema(data_close,250)
+    ema_slope = fuc.compute_ema(data_close,long)
     for i in range(len(data_close)):
-        if macd[i] >= 0 and ema_1[i] > ema_2[i] and ema_250[i] > ema_250[i - 1]:
+        if macd[i] >= 0 and ema_1[i] > ema_2[i] and ema_slope[i] > ema_slope[i - 1]:
             direction[i] = 1
-        elif macd[i] < 0 and ema_1[i] < ema_2[i] and ema_250[i] <= ema_250[i - 1]:
+        elif macd[i] < 0 and ema_1[i] < ema_2[i] and ema_slope[i] <= ema_slope[i - 1]:
             direction[i] = -1
         else:
             direction[i] = 0

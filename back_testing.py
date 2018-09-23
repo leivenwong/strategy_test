@@ -5,14 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import cholesky
 
-from settings import Settings
-import functions as fuc
-from result import Result
+from strategy_settings import Settings
+import strategy_functions as fuc
+import result
 import strategy
 
 #initiate settings
 ai_settings = Settings()
-result_show = Result()
+result_show = result.Result()
 result_show.reset_net_value()
 
 #read raw data
@@ -51,3 +51,8 @@ print(ai_settings.fetch_table+" max retracement: "+str(target_max_retracement))
 #draw plot according to settings
 if ai_settings.draw_plot:
     fuc.draw_plot(ai_settings, net_value, target_net_value, data_date)
+
+out_net_value = pd.DataFrame()
+out_net_value['net_value'] = net_value
+#out_net_value.to_excel("D:\\python_project\\statistics\\net_value.xlsx",
+    #"Sheet1")
