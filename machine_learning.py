@@ -9,6 +9,9 @@ from strategy_settings import Settings
 import strategy_functions as fuc
 from result import Result
 import strategy
+import sys
+sys.path.append('D:\\python_project\\statistics')
+from statistics_functions import compute_r
 
 #initiate settings
 ai_settings = Settings()
@@ -23,18 +26,22 @@ target = pd.DataFrame(target)
 data_close = target.loc[0:, ai_settings.fetch_close]
 data_date = target.loc[0:, ai_settings.fetch_date]
 data_date = fuc.date_format(data_date)
+target_direction = [1] * len(data_close)
+target_net_value = fuc.compute_net_value(data_close, target_direction,
+    ai_settings, result_show)
 
 #initiate parameters
 short_begin = 3
 short_end = 11
 long_begin = 20
-long_end = 61
+long_end = 31
 cub = (short_end - short_begin) * (long_end - long_begin)
 out_net_value = [0] * cub
 out_max_retracement = [0] * cub
 out_sharp = [0] * cub
 out_short = [0] * cub
 out_long = [0] * cub
+out_r = [0] * cub
 test_mark = 0
 
 #start main cycle
@@ -58,6 +65,7 @@ for n in range(long_begin, long_end):
         out_short[test_mark] = i
         out_long[test_mark] = n
         out_sharp[test_mark] = net_value[-1] / std
+        out_r[test_mark] = compute_r(target_net_value,net_value)
         print(str(test_mark)+" of "+str(cub))
         test_mark = test_mark + 1
 
@@ -74,6 +82,7 @@ out['long'] = out_long
 out['net_value'] = out_net_value
 out['max_retracement'] = out_max_retracement
 out['sharp'] = out_sharp
+out['r'] = out_r
 print(out)
 
 out.to_excel('learning_out.xlsx', 'Sheet1')

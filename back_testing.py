@@ -32,7 +32,7 @@ target_net_value = fuc.compute_net_value(data_close, target_direction,
 target_max_retracement = result_show.max_retracement
 
 # fetch direction from strategy
-direction = strategy.macd_strategy(data_close, result_show, 5, 60)
+direction = strategy.macd_strategy(data_close, result_show, 5, 30)
 
 # compute result of strategy
 net_value = fuc.compute_net_value(data_close, direction, ai_settings,result_show)
@@ -47,12 +47,12 @@ print("Strategy max retracement: "+str(max_retracement))
 print("Trade times: "+str(result_show.trade_times))
 print(ai_settings.fetch_table+" net value: "+str(target_net_value[-1]))
 print(ai_settings.fetch_table+" max retracement: "+str(target_max_retracement))
-
-#draw plot according to settings
-if ai_settings.draw_plot:
-    fuc.draw_plot(ai_settings, net_value, target_net_value, data_date)
-
 out_net_value = pd.DataFrame()
 out_net_value['net_value'] = net_value
-#out_net_value.to_excel("D:\\python_project\\statistics\\net_value.xlsx",
-    #"Sheet1")
+out_net_value['target_net_value'] = target_net_value
+
+#draw plot according to settings
+if ai_settings.draw_plot and __name__ == '__main__':
+    fuc.draw_plot(ai_settings, net_value, target_net_value, data_date)
+
+
