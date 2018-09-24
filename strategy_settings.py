@@ -20,5 +20,8 @@ class Settings():
         #set trade fee
         self.trade_fee = 0.0000325
 
+        #if only buy
+        self.only_buy = False
+
         #if want to draw polt
-        self.draw_plot = True
+        self.draw_plot = False
