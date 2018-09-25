@@ -5,17 +5,19 @@ class Settings():
         self.file_path = "399300.xlsx"
 
         #read Mysql database's path
-        self.sql_path = 'mysql+pymysql://ctp_user:ctp_password' \
+        self.sql_path_merged = 'mysql+pymysql://ctp_user:ctp_password' \
             '@127.0.0.1/ctp_merged_mq?charset=utf8'
+        self.sql_path_backtesting = 'mysql+pymysql://ctp_user:ctp_password' \
+            '@127.0.0.1/ctp_backtesting?charset=utf8'
 
         #set which table will used in mysql database
         self.fetch_table = 'if_1d'
 
         #fetch date column in raw data
-        self.fetch_date = 'utc_string'
+        self.fetch_close = "close_price"
 
         #fetch close price in raw data
-        self.fetch_close = 'close_price'
+        self.fetch_date = "utc_string"
 
         #set trade fee
         self.trade_fee = 0.0000325

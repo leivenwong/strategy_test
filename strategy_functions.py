@@ -7,14 +7,21 @@ from strategy_settings import Settings
 from result import Result
 
 
-def read_sql(ai_settings):
+def read_sql_merged(ai_settings):
     """read data from sql database"""
     print("Enter Mysql")
-    engine = create_engine(ai_settings.sql_path)
+    engine = create_engine(ai_settings.sql_path_merged)
     df = pd.read_sql(sql="select * from "+ai_settings.fetch_table, con=engine)
     print("Out Mysql")
     return df
 
+def read_sql_backtesting(ai_settings):
+    """read data from sql database"""
+    print("Enter Mysql")
+    engine = create_engine(ai_settings.sql_path_backtesting)
+    df = pd.read_sql(sql="select * from "+ai_settings.fetch_table, con=engine)
+    print("Out Mysql")
+    return df
 
 def read_file(ai_settings):
     """read data from data_path"""
@@ -34,18 +41,50 @@ def compute_ma(data,cycle):
     return ma_cycle
 
 
+def compute_easy_net(data,result_show):
+    """compute easy net value for target"""
+    print("compute easy net value...")
+    net_value = [1] * len(data)
+    max_value = 0
+    for i in range(len(data)):
+        #print("Easy net: "+str(i)+" of "+str(len(data)))
+
+        #initiate max retracement
+        result_show.easy_max_retracement = 0
+
+        #compute easy net value
+        net_value[i] = data[i] / data[0]
+
+        #update max retracement
+        if net_value[i] > max_value:
+            max_value = net_value[i]
+        retracement = (max_value - net_value[i]) / max_value
+        if retracement > result_show.target_max_retracement:
+            result_show.easy_max_retracement = retracement
+    print("easy net value compute has completed.")
+    return net_value
+
+
 def compute_net_value(data, direction, ai_setting, result_show):
     """compute net value list"""
     print("begin compute net value...")
     net_value = [0] * len(data)
     net_value[0] = 1
-    retracement = [0] * len(data)
+    max_value = 0
     trade_succeed = 0
     for i in range(1, len(data)):
+        #print("Net value: "+str(i) + " of " +str(len(data)))
+
+        #initiate max retracement
+        result_show.max_retracement = 0
+
+        #compute fees
         if direction[i - 1] != direction[i]:
             fee_mark = ai_setting.trade_fee
         else:
             fee_mark = 0
+
+        #compute trade success times for success rate
         if direction[i - 1] == 0 and direction[i] == 1:
             result_show.open = data[i]
         elif direction[i - 1] == 0 and direction[i] == -1:
@@ -98,6 +137,8 @@ def compute_net_value(data, direction, ai_setting, result_show):
                 result_show.max_loss = \
                     (result_show.close - result_show.open) / result_show.open
             result_show.open = data[i]
+
+        #compute net value according to strategy direction
         if direction[i - 1] == 1:
             net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1])
                 / data[i - 1] + 1 - fee_mark)
@@ -106,9 +147,15 @@ def compute_net_value(data, direction, ai_setting, result_show):
                 / data[i - 1] + 1 - fee_mark)
         else:
             net_value[i] = net_value[i - 1]
-        max_value = max(net_value)
-        retracement[i] = (max_value - net_value[i]) / max_value
-    result_show.max_retracement = max(retracement)
+
+        #update max retracement
+        if net_value[i] > max_value:
+            max_value = net_value[i]
+        retracement = (max_value - net_value[i]) / max_value
+        if retracement > result_show.max_retracement:
+            result_show.max_retracement = retracement
+
+    #update std and trade success times
     result_show.std = compute_std(net_value)
     result_show.trade_succeed = trade_succeed
     print("net value compute has completed.")
@@ -127,7 +174,7 @@ def frofit_per(data_close):
 def set_xlable_visible(data):
     """set x lable's"visible config"""
     ax = plt.gca()
-    visible_count = int(len(data) / 5)
+    visible_count = int(len(data) / 3)
     for ind, label in enumerate(ax.xaxis.get_ticklabels()):
         if ind % visible_count == 0:  # set visible number of x lable
             label.set_visible(True)

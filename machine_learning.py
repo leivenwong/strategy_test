@@ -19,7 +19,7 @@ result_show = Result()
 result_show.reset_net_value()
 
 #read raw data
-target = fuc.read_sql(ai_settings)
+target = fuc.read_sql_merged(ai_settings)
 target = pd.DataFrame(target)
 
 #select close price for compute
@@ -27,15 +27,17 @@ data_close = target.loc[0:, ai_settings.fetch_close]
 data_date = target.loc[0:, ai_settings.fetch_date]
 data_date = fuc.date_format(data_date)
 target_direction = [1] * len(data_close)
-target_net_value = fuc.compute_net_value(data_close, target_direction,
-    ai_settings, result_show)
+target_net_value = fuc.compute_easy_net(data_close, result_show)
 
 #initiate parameters
 short_begin = 3
-short_end = 11
+short_end = 13
 long_begin = 20
 long_end = 31
-cub = (short_end - short_begin) * (long_end - long_begin)
+mid_begin = 3
+mid_end = 11
+cub = (short_end - short_begin) * (long_end - long_begin) * \
+    (mid_end - mid_begin)
 out_net_value = [0] * cub
 out_max_retracement = [0] * cub
 out_sharp = [0] * cub
@@ -47,33 +49,35 @@ out_profit_loss_rate = [0] * cub
 test_mark = 0
 
 #start main cycle
-for n in range(long_begin, long_end):
-    long = n
-    for i in range(short_begin, short_end):
-        # fetch direction from strategy
-        short = i
-        direction = strategy.macd_strategy(data_close, ai_settings, result_show, short, long)
+for mid in range(mid_begin,mid_end):
+    for n in range(long_begin, long_end):
+        long = n
+        for i in range(short_begin, short_end):
+            print("Parameter " + str(test_mark) + " of " + str(cub))
+            # fetch direction from strategy
+            short = i
+            direction = strategy.macd_strategy(data_close, ai_settings,
+                result_show, short, long, mid)
 
-        # compute result of strategy
-        net_value = fuc.compute_net_value(data_close, direction, ai_settings,
-            result_show)
-        max_retracement = result_show.max_retracement
-        std = result_show.std
+            # compute result of strategy
+            net_value = fuc.compute_net_value(data_close, direction,
+                ai_settings, result_show)
+            max_retracement = result_show.max_retracement
+            std = result_show.std
 
-        # update result class
-        result_show.update_net_value(net_value[-1])
-        out_net_value[test_mark] = net_value[-1]
-        out_max_retracement[test_mark] = max_retracement
-        out_short[test_mark] = i
-        out_long[test_mark] = n
-        out_sharp[test_mark] = net_value[-1] / std
-        out_r[test_mark] = compute_r(target_net_value,net_value)
-        out_success_rate[test_mark] = \
-            (result_show.trade_succeed / result_show.trade_times)
-        out_profit_loss_rate[test_mark] = \
-            abs(result_show.max_profit / result_show.max_loss)
-        print(str(test_mark)+" of "+str(cub))
-        test_mark = test_mark + 1
+            # update result class
+            result_show.update_net_value(net_value[-1])
+            out_net_value[test_mark] = net_value[-1]
+            out_max_retracement[test_mark] = max_retracement
+            out_short[test_mark] = i
+            out_long[test_mark] = n
+            out_sharp[test_mark] = net_value[-1] / std
+            out_r[test_mark] = compute_r(target_net_value, net_value)
+            out_success_rate[test_mark] = \
+                (result_show.trade_succeed / result_show.trade_times)
+            out_profit_loss_rate[test_mark] = \
+                abs(result_show.max_profit / result_show.max_loss)
+            test_mark = test_mark + 1
 
 
 #print result and ourput result to excel

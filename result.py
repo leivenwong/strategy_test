@@ -4,11 +4,12 @@ class Result():
     """define result class"""
     def __init__(self):
         self.net_value = 1
+        self.easy_max_retracement = 0
         self.max_retracement = 0
         self.trade_times = 0
         self.std = 0
-        self.open = 0
-        self.close = 0
+        self.open = 1
+        self.close = 1
         self.trade_succeed = 0
         self.max_profit = 0
         self.max_loss = 0
