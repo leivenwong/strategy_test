@@ -37,12 +37,13 @@ def macd_ema_strategy(data_close, ai_settings, result_show, short, long):
     macd = fuc.compute_macd(data_close, 12, 26, 9)
     ema_short = fuc.compute_ema(data_close,short)
     ema_long = fuc.compute_ema(data_close,long)
-    for i in range(len(data_close)):
-        if macd[i] >= 0 and ema_short[i] > ema_long[i] \
-            and ema_long[i] > ema_long[i - 1]:
+    roll = 1
+    for i in range(roll, len(data_close)):
+        if macd[i - roll] >= 0 and ema_short[i - roll] > ema_long[i - roll] \
+        and ema_long[i - roll] > ema_long[i - roll - 1]:
             direction[i] = 1
-        elif macd[i] < 0 and ema_short[i] < ema_long[i] and \
-            ema_long[i] < ema_long[i - 1] and ai_settings.only_buy == False:
+        elif macd[i - roll] < 0 and ema_short[i - roll] < ema_long[i - roll] and \
+        ema_long[i - roll] < ema_long[i - roll - 1] and ai_settings.only_buy == False:
             direction[i] = -1
         else:
             direction[i] = 0

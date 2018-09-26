@@ -59,7 +59,7 @@ def compute_easy_net(data,result_show):
         if net_value[i] > max_value:
             max_value = net_value[i]
         retracement = (max_value - net_value[i]) / max_value
-        if retracement > result_show.target_max_retracement:
+        if retracement > result_show.easy_max_retracement:
             result_show.easy_max_retracement = retracement
     print("easy net value compute has completed.")
     return net_value
