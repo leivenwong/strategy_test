@@ -26,4 +26,4 @@ class Settings():
         self.only_buy = False
 
         #if want to draw polt
-        self.draw_plot = False
+        self.draw_plot = True

@@ -90,5 +90,8 @@ out['success_rate'] = out_success_rate
 out['profit_loss_rate'] = out_profit_loss_rate
 out['sharp'] = out_sharp
 out['r'] = out_r
-print(out)
 out.to_excel('learning_out.xlsx', 'Sheet1')
+
+#print result if name is main
+if __name__ == '__main__':
+    print(out)

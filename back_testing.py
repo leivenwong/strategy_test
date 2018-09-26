@@ -47,26 +47,27 @@ r = compute_r(net_value,target_net_value)
 # update result class
 result_show.update_net_value(net_value[-1])
 
-#print result
-print("Strategy net value: "+str(net_value[-1]))
-print("Strategy max retracement: "+str(max_retracement))
-print("Trade times: "+str(result_show.trade_times))
-print("Trade succeed: "+str(result_show.trade_succeed))
-print("Trade success rate: "+str(result_show.trade_succeed
-    / result_show.trade_times))
-print("Max profit: "+ str(result_show.max_profit))
-print("Max_loss: "+str(result_show.max_loss))
-print("Profit/risk rate: "+str(abs(result_show.max_profit /
-    result_show.max_loss)))
-print(ai_settings.fetch_table+" net value: "+str(target_net_value[-1]))
-print(ai_settings.fetch_table+" max retracement: "
-    +str(target_max_retracement))
-print("Correlation r: "+str(r))
-out_net_value = pd.DataFrame()
-out_net_value['net_value'] = net_value
-out_net_value['target_net_value'] = target_net_value
+#print result if name is main
+if __name__ == '__main__':
+    # print result
+    print("Strategy net value: " + str(net_value[-1]))
+    print("Strategy max retracement: " + str(max_retracement))
+    print("Trade times: " + str(result_show.trade_times))
+    print("Trade succeed: " + str(result_show.trade_succeed))
+    print("Trade success rate: " + str(result_show.trade_succeed
+                                       / result_show.trade_times))
+    print("Max profit: " + str(result_show.max_profit))
+    print("Max_loss: " + str(result_show.max_loss))
+    print("Profit/risk rate: " + str(abs(result_show.max_profit /
+                                         result_show.max_loss)))
+    print("Index net value: " + str(target_net_value[-1]))
+    print("Index max retracement: " + str(target_max_retracement))
+    print("Correlation r: " + str(r))
+    out_net_value = pd.DataFrame()
+    out_net_value['net_value'] = net_value
+    out_net_value['target_net_value'] = target_net_value
 
-#draw plot according to settings
+#show plot if settings is true
 if ai_settings.draw_plot and __name__ == '__main__':
     fuc.draw_plot(ai_settings, net_value, target_net_value, data_date)
 
