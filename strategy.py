@@ -13,6 +13,7 @@ def macd_strategy(data_close, ai_settings, result_show, mid, long, short):
     # initiate variate
     direction = [0] * len(data_close)
     trade_times = 0
+    open = 0
     # compute condition
     macd = fuc.compute_macd(data_close, short, long, mid)
     for i in range(len(data_close)):
@@ -22,8 +23,24 @@ def macd_strategy(data_close, ai_settings, result_show, mid, long, short):
             direction[i] = -1
         else:
             direction[i] = 0
-        if direction[i] != direction[i - 1]:
+
+        # count trade times
+        if direction[i - 1] == 0 and direction[i] == 1:
+            open = 1
+        elif direction[i - 1] == 0 and direction[i] == -1:
+            open = -1
+        elif direction[i - 1] == -1 and direction[i] == 1 and open == -1:
             trade_times += 1
+            open = 1
+        elif direction[i - 1] == 1 and direction[i] == -1 and open == 1:
+            trade_times += 1
+            open = -1
+        elif direction[i - 1] == 1 and direction[i] == 0 and open == 1:
+            trade_times += 1
+            open = 0
+        elif direction[i - 1] == -1 and direction[i] == 0 and open == -1:
+            trade_times += 1
+            open = 0
     result_show.trade_times = trade_times
     return direction
 
@@ -33,6 +50,7 @@ def macd_ema_strategy(data_close, ai_settings, result_show, short, long):
     # initiate variate
     direction = [0] * len(data_close)
     trade_times = 0
+    open = 0
     # compute condition
     macd = fuc.compute_macd(data_close, 12, 26, 9)
     ema_short = fuc.compute_ema(data_close,short)
@@ -47,7 +65,57 @@ def macd_ema_strategy(data_close, ai_settings, result_show, short, long):
             direction[i] = -1
         else:
             direction[i] = 0
-        if direction[i] != direction[i - 1]:
+
+        # count trade times
+        if direction[i - 1] == 0 and direction[i] == 1:
+            open = 1
+        elif direction[i - 1] == 0 and direction[i] == -1:
+            open = -1
+        elif direction[i - 1] == -1 and direction[i] == 1 and open == -1:
             trade_times += 1
+            open = 1
+        elif direction[i - 1] == 1 and direction[i] == -1 and open == 1:
+            trade_times += 1
+            open = -1
+        elif direction[i - 1] == 1 and direction[i] == 0 and open == 1:
+            trade_times += 1
+            open = 0
+        elif direction[i - 1] == -1 and direction[i] == 0 and open == -1:
+            trade_times += 1
+            open = 0
+
+    result_show.trade_times = trade_times
+    return direction
+
+
+def future_strategy(data, ai_settings, result_show):
+    direction = [0] * len(data)
+    trade_times = 0
+    open = 0
+    for i in range(len(data)-1):
+        if data[i + 1] > data[i]:
+            direction[i] = 1
+        elif data[i + 1] < data[i]:
+            direction[i] = -1
+        else:
+            direction[i] = 0
+
+        #count trade times
+        if direction[i - 1] == 0 and direction[i] == 1:
+            open = 1
+        elif direction[i - 1] == 0 and direction[i] == -1:
+            open = -1
+        elif direction[i - 1] == -1 and direction[i] == 1 and open == -1:
+            trade_times += 1
+            open = 1
+        elif direction[i - 1] == 1 and direction[i] == -1 and open == 1:
+            trade_times += 1
+            open = -1
+        elif direction[i - 1] == 1 and direction[i] == 0 and open == 1:
+            trade_times += 1
+            open = 0
+        elif direction[i - 1] == -1 and direction[i] == 0 and open == -1:
+            trade_times += 1
+            open = 0
     result_show.trade_times = trade_times
     return direction

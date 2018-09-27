@@ -2,6 +2,8 @@ import pandas as pd
 import random as rd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
+import datetime
+import time
 
 from strategy_settings import Settings
 from result import Result
@@ -46,11 +48,11 @@ def compute_easy_net(data,result_show):
     print("compute easy net value...")
     net_value = [1] * len(data)
     max_value = 0
+
+    # initiate max retracement
+    result_show.easy_max_retracement = 0
     for i in range(len(data)):
         #print("Easy net: "+str(i)+" of "+str(len(data)))
-
-        #initiate max retracement
-        result_show.easy_max_retracement = 0
 
         #compute easy net value
         net_value[i] = data[i] / data[0]
@@ -72,11 +74,11 @@ def compute_net_value(data, direction, ai_setting, result_show):
     net_value[0] = 1
     max_value = 0
     trade_succeed = 0
+
+    # initiate max retracement
+    result_show.max_retracement = 0
     for i in range(1, len(data)):
         #print("Net value: "+str(i) + " of " +str(len(data)))
-
-        #initiate max retracement
-        result_show.max_retracement = 0
 
         #compute fees
         if direction[i - 1] != direction[i]:
@@ -128,6 +130,8 @@ def compute_net_value(data, direction, ai_setting, result_show):
             result_show.open = data[i]
         elif direction[i - 1] == 1 and direction[i] == -1:
             result_show.close = data[i]
+            if result_show.close > result_show.open:
+                trade_succeed += 1
             if (result_show.close - result_show.open) / result_show.open \
                 > result_show.max_profit:
                 result_show.max_profit = \
@@ -139,12 +143,13 @@ def compute_net_value(data, direction, ai_setting, result_show):
             result_show.open = data[i]
 
         #compute net value according to strategy direction
+        rt = ai_setting.leverage_rate
         if direction[i - 1] == 1:
-            net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1])
-                / data[i - 1] + 1 - fee_mark)
+            net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1]) *
+            rt / data[i - 1] + 1 - fee_mark * rt)
         elif direction[i - 1] == -1:
-            net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i])
-                / data[i - 1] + 1 - fee_mark)
+            net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i]) *
+            rt / data[i - 1] + 1 - fee_mark * rt)
         else:
             net_value[i] = net_value[i - 1]
 
@@ -190,7 +195,8 @@ def set_xlable_visible(data):
 def date_format(data):
     """set date format which wanted"""
     for i in range(len(data)):
-       data[i] = data[i][0:10]
+        data[i] = str(data[i])
+        data[i] = data[i][0:10]
     return  data
 
 
@@ -238,6 +244,46 @@ def compute_macd(data, short, long, mid):
     macd = list(map(lambda x: x[0]-x[1], zip(dif, dea)))
     macd = [i * 2 for i in macd]
     return macd
+
+def direction_mix(direction, direction_mix):
+    direction_final = [0] * len(direction)
+    for i in range(len(direction)):
+        if direction[i] == 1 and direction_mix[i] == 1:
+            direction_final[i] = 1
+        elif direction[i] == -1 and direction_mix[i] == -1:
+            direction_final[i] = -1
+        else:
+            direction_final[i] = 0
+    return direction_final
+
+
+def to_date(data):
+    data_date = [0] * len(data)
+    for i in range(len(data)):
+        data_date[i] = datetime.datetime.date(data[i])
+    return data_date
+
+
+def random_int(a, b, times):
+    r = [0] * times
+    for i in range(times):
+        r[i] = rd.randint(a, b)
+        print(r[i])
+    return r
+
+
+def m1_m2_direction(out):
+    direction = [0] * len(out)
+    for mark in range(2, len(out)):
+        if out.loc[mark -1, 'm1-m2'] > out.loc[mark - 2, 'm1-m2']:
+            direction[mark] = 1
+        elif out.loc[mark - 1, 'm1-m2'] < out.loc[mark - 2, 'm1-m2']:
+            direction[mark] = -1
+        else:
+            direction[mark] = direction[mark - 1]
+        mark += 1
+    return direction
+
 
 def if_main(net_value):
     if __name__ == '__main__':

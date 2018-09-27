@@ -2,7 +2,7 @@ class Settings():
     """initiate settings"""
     def __init__(self):
         #read excel file' path
-        self.file_path = "399300.xlsx"
+        self.file_path = "macro.xlsx"
 
         #read Mysql database's path
         self.sql_path_merged = 'mysql+pymysql://ctp_user:ctp_password' \
@@ -22,8 +22,11 @@ class Settings():
         #set trade fee
         self.trade_fee = 0.0000325
 
+        #set leverage
+        self.leverage_rate = 1
+
         #if only buy
-        self.only_buy = True
+        self.only_buy = False
 
         #if want to draw polt
-        self.draw_plot = True
+        self.draw_plot = False

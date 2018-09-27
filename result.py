@@ -12,7 +12,7 @@ class Result():
         self.close = 1
         self.trade_succeed = 0
         self.max_profit = 0
-        self.max_loss = 0
+        self.max_loss = 1
 
     def reset_net_value(self):
         self.net_value = 1
