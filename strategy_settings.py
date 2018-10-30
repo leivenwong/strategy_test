@@ -16,6 +16,15 @@ class Settings():
         #fetch date column in raw data
         self.fetch_close = "close_price"
 
+        #fetch open
+        self.fetch_open = "open_price"
+
+        #fetch high
+        self.fetch_high = "high_price"
+
+        #fetch low
+        self.fetch_low = "low_price"
+
         #fetch close price in raw data
         self.fetch_date = "utc_string"
 
@@ -25,8 +34,15 @@ class Settings():
         #set leverage
         self.leverage_rate = 1
 
+        #if stop
+        self.stop = 0.05
+
+        #if stopwin
+        self.stopwin = 1
+
         #if only buy
         self.only_buy = False
 
         #if want to draw polt
-        self.draw_plot = False
+        self.draw_plot = True
+

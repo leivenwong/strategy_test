@@ -14,7 +14,6 @@ import strategy
 import sys
 sys.path.append('D:\\python_project\\statistics')
 from statistics_functions import compute_r
-import add_m1_m2
 
 #initiate settings
 ai_settings = Settings()
@@ -22,10 +21,13 @@ result_show = result.Result()
 result_show.reset_net_value()
 
 #read raw data
-target = add_m1_m2.out
+target = fuc.read_sql_merged(ai_settings)
 target = pd.DataFrame(target)
 
 #select close price for compute
+data_open = target.loc[0:, ai_settings.fetch_open]
+data_high = target.loc[0:, ai_settings.fetch_high]
+data_low = target.loc[0:, ai_settings.fetch_low]
 data_close = target.loc[0:, ai_settings.fetch_close]
 data_date = target.loc[0:, ai_settings.fetch_date]
 data_date = pd.to_datetime(data_date)
@@ -38,10 +40,9 @@ target_net_value = fuc.compute_easy_net(data_close, result_show)
 target_max_retracement = result_show.easy_max_retracement
 
 # fetch direction from strategy
-direction = strategy.macd_ema_strategy(data_close, ai_settings,
-   result_show, 9, 26)
-direction_mix = target['direction']
-direction_final = direction
+direction = strategy.macd_ema_strategy(data_close, ai_settings, 9, 26)
+direction_mix = strategy.far_from_strategy(data_close, ai_settings, 9, 0.98, 1.02)
+direction_final = fuc.direction_mix(direction, direction_mix)
 
 # compute result of strategy
 net_value = fuc.compute_net_value(data_close, direction_final, ai_settings,
@@ -56,6 +57,8 @@ result_show.update_net_value(net_value[-1])
 if __name__ == '__main__':
     # print result
     print("Strategy net value: " + str(net_value[-1]))
+    print("Strategy R/Y: " + str( -1 + net_value[-1] **
+        (1/(len(data_close) / 250))))
     print("Strategy max retracement: " + str(max_retracement))
     print("Trade times: " + str(result_show.trade_times))
     print("Trade succeed: " + str(result_show.trade_succeed))
@@ -73,10 +76,14 @@ if __name__ == '__main__':
     out['direction'] = direction_final
     out['net_value'] = net_value
     out['index_net_value'] = target_net_value
-    out.to_excel('backtesting.xlsx', 'Sheet1')
+
+    if len(data_close) < 20000:
+        print("writting excel...")
+        out.to_excel('backtesting.xlsx', 'Sheet1')
 
 #show plot if settings is true
-if ai_settings.draw_plot and __name__ == '__main__':
+if ai_settings.draw_plot and __name__ == '__main__' \
+        and len(data_close) < 20000:
     fuc.draw_plot(ai_settings, net_value, target_net_value, data_date)
 
 

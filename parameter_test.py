@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy
 
 from strategy_settings import Settings
 import strategy_functions as fuc
@@ -25,11 +26,12 @@ target_direction = [1] * len(data_close)
 target_net_value = fuc.compute_easy_net(data_close, result_show)
 
 #initiate parameters
-short_begin = 3
-short_end = 14
-long_begin = 20
-long_end = 31
-cub = (short_end - short_begin) * (long_end - long_begin)
+short_begin = 0.91
+short_end = 1.00
+long_begin = 1.01
+long_end = 1.09
+cub = int(((short_end - short_begin) / 0.01) *
+    ((long_end - long_begin) / 0.01 + 1))
 out_net_value = [0] * cub
 out_max_retracement = [0] * cub
 out_sharp = [0] * cub
@@ -41,17 +43,21 @@ out_profit_loss_rate = [0] * cub
 test_mark = 0
 
 #start main cycle
-for n in range(long_begin, long_end):
+for n in numpy.arange(long_begin, long_end, 0.01):
     long = n
-    for i in range(short_begin, short_end):
+    for i in numpy.arange(short_begin, short_end, 0.01):
         print("Parameter " + str(test_mark) + " of " + str(cub))
         # fetch direction from strategy
         short = i
-        direction = strategy.macd_ema_strategy(data_close, ai_settings, short, long)
+        direction = strategy.macd_ema_strategy(data_close, ai_settings, 9, 26)
+        direction_mix = strategy.far_from_strategy(data_close, ai_settings, 9,
+                                                   i, n)
+        direction_final = fuc.direction_mix(direction, direction_mix)
+        direction = direction_final
 
         # compute result of strategy
-        net_value = fuc.compute_net_value(data_close, direction,
-                                          ai_settings, result_show)
+        net_value = fuc.compute_net_value(data_close, direction, ai_settings,
+            result_show)
         max_retracement = result_show.max_retracement
         std = result_show.std
 

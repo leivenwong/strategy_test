@@ -2,7 +2,7 @@ import pandas as pd
 import random as rd
 import math
 import matplotlib.pyplot as plt
-import numpy as np
+import numpy
 from numpy.linalg import cholesky
 import datetime
 import time
@@ -21,40 +21,9 @@ result_show = result.Result()
 result_show.reset_net_value()
 
 #read raw data
-target_1 = fuc.read_file(ai_settings)
-target_2 = fuc.read_sql_merged(ai_settings)
-target_2['date'] = target_2['utc_string']
-date_2 = target_2.loc[0:, 'date']
-date_2 = fuc.date_format(date_2)
-target_2['date'] = date_2
-target_2['date'] = pd.to_datetime(target_2['date'])
+target_1 = fuc.read_sql_backtesting(ai_settings)
 target_1 = pd.DataFrame(target_1)
-target_2 = pd.DataFrame(target_2)
+data = target_1['CLOSE']
 
-grouped_data = pd.merge(target_2, target_1, on='date', how='left')
-grouped_data = grouped_data.sort_values(by='date')
-grouped_data = grouped_data.fillna(method='ffill')
-grouped_data = grouped_data.drop_duplicates()
 
-out = pd.DataFrame()
-out['utc_string'] = grouped_data['date']
-out['close_price'] = grouped_data['close_price']
-out['m1-m2'] = grouped_data['m1-m2']
-
-direction = [0] * len(out)
-for mark in range(1, len(out)):
-    if out.loc[mark, 'm1-m2'] > out.loc[mark - 1, 'm1-m2']:
-        direction[mark] = 1
-    elif out.loc[mark, 'm1-m2'] < out.loc[mark - 1, 'm1-m2']:
-        direction[mark] = -1
-    else:
-        direction[mark] = direction[mark - 1]
-    mark += 1
-
-out['direction'] = direction
-out = out[out['utc_string'] > datetime.datetime(1997, 1, 30)]
-out = out.reindex(range(len(out)), method='bfill')
-
-if __name__ == '__main__':
-    print(out)
-    out.to_excel('console.xlsx')
+print(fuc.compute_rsi(data, 9))

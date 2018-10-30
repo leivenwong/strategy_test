@@ -74,17 +74,35 @@ def compute_net_value(data, direction, ai_setting, result_show):
     net_value[0] = 1
     max_value = 0
     trade_succeed = 0
+    trade_times = 0
 
     # initiate max retracement
     result_show.max_retracement = 0
     for i in range(1, len(data)):
-        #print("Net value: "+str(i) + " of " +str(len(data)))
 
         #compute fees
         if direction[i - 1] != direction[i]:
             fee_mark = ai_setting.trade_fee
         else:
             fee_mark = 0
+
+        # count trade times
+        if direction[i - 1] == 0 and direction[i] == 1:
+            open = 1
+        elif direction[i - 1] == 0 and direction[i] == -1:
+            open = -1
+        elif direction[i - 1] == -1 and direction[i] == 1 and open == -1:
+            trade_times += 1
+            open = 1
+        elif direction[i - 1] == 1 and direction[i] == -1 and open == 1:
+            trade_times += 1
+            open = -1
+        elif direction[i - 1] == 1 and direction[i] == 0 and open == 1:
+            trade_times += 1
+            open = 0
+        elif direction[i - 1] == -1 and direction[i] == 0 and open == -1:
+            trade_times += 1
+            open = 0
 
         #compute trade success times for success rate
         if direction[i - 1] == 0 and direction[i] == 1:
@@ -163,6 +181,7 @@ def compute_net_value(data, direction, ai_setting, result_show):
     #update std and trade success times
     result_show.std = compute_std(net_value)
     result_show.trade_succeed = trade_succeed
+    result_show.trade_times = trade_times
     print("net value compute has completed.")
     return net_value
 
@@ -230,7 +249,7 @@ def compute_std(data):
     return compute_var ** (1/2)
 
 def compute_ema(data,cycle):
-    ema = [0] * len(data)
+    ema = [data[0]] * len(data)
     ema[1] = data[1]
     for i in range(2, len(data)):
         ema[i] = (2 * data[i] + (cycle - 1) * ema[i - 1]) / (cycle + 1)
@@ -245,6 +264,37 @@ def compute_macd(data, short, long, mid):
     macd = [i * 2 for i in macd]
     return macd
 
+def compute_sma(data, n, m):
+    sma = []
+    sma.append(data[0])
+    for i in range(1, len(data)):
+        sma.append((data[i] * m + (n - m) * sma[i - 1]) / n)
+    return sma
+
+def compute_rsi(data, cycle):
+    rsi = []
+    real = []
+    data_roll = []
+    judge = []
+    abs_judge = []
+    data_roll.append(data[0])
+    judge.append(1)
+    abs_judge.append(1)
+    for i in range(1,len(data)):
+        data_roll.append(data[i - 1])
+        judge.append(data[i] - data_roll[i])
+        abs_judge.append(abs(data[i] - data_roll[i]))
+    for i in range(len(judge)):
+        if judge[i] >= 0:
+            real.append(judge[i])
+        else:
+            real.append(0)
+    rsi_a = compute_sma(real, cycle, 1)
+    rsi_b = compute_sma(abs_judge, cycle, 1)
+    for i in range(len(rsi_a)):
+        rsi.append(rsi_a[i] / rsi_b[i] * 100)
+    return rsi
+
 def direction_mix(direction, direction_mix):
     direction_final = [0] * len(direction)
     for i in range(len(direction)):
@@ -252,6 +302,8 @@ def direction_mix(direction, direction_mix):
             direction_final[i] = 1
         elif direction[i] == -1 and direction_mix[i] == -1:
             direction_final[i] = -1
+        elif direction_mix[i] == 'follow':
+            direction_final[i] = direction[i]
         else:
             direction_final[i] = 0
     return direction_final

@@ -49,4 +49,3 @@ out = out.reindex(range(len(out)), method='bfill')
 
 if __name__ == '__main__':
     print(out)
-    out.to_excel('console.xlsx')
