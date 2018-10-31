@@ -110,3 +110,20 @@ def far_from_strategy(data_close, ai_settings, cycle, down_far, up_far):
         else:
             direction[i] = 'follow'
     return direction
+
+
+def rsi_strategy(data_close, ai_settings, cycle, small, big):
+    print("get strategy...")
+    # initiate variate
+    direction = [0] * len(data_close)
+    rsi = fuc.compute_rsi(data_close, cycle)
+
+    # compute condition
+    for i in range(len(data_close)):
+        if rsi[i] < small:
+            direction[i] = 1
+        elif rsi[i] > big and ai_settings.only_buy == False:
+            direction[i] = -1
+        else:
+            direction[i] = 'follow'
+    return direction

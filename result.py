@@ -7,12 +7,14 @@ class Result():
         self.easy_max_retracement = 0
         self.max_retracement = 0
         self.trade_times = 0
+        self.stop_times = 0
         self.std = 0
         self.open = 1
         self.close = 1
         self.trade_succeed = 0
         self.max_profit = 0
         self.max_loss = 1
+        self.ifstop = 0
 
     def reset_net_value(self):
         self.net_value = 1

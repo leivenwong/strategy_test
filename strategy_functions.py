@@ -67,7 +67,8 @@ def compute_easy_net(data,result_show):
     return net_value
 
 
-def compute_net_value(data, direction, ai_setting, result_show):
+def compute_net_value(data, data_open, data_low, data_high, direction,
+    ai_setting, result_show):
     """compute net value list"""
     print("begin compute net value...")
     net_value = [0] * len(data)
@@ -75,41 +76,34 @@ def compute_net_value(data, direction, ai_setting, result_show):
     max_value = 0
     trade_succeed = 0
     trade_times = 0
+    trade_times_pro = 0
+    stop_times = 0
 
     # initiate max retracement
     result_show.max_retracement = 0
     for i in range(1, len(data)):
 
         #compute fees
-        if direction[i - 1] != direction[i]:
+        if trade_times_pro != trade_times:
             fee_mark = ai_setting.trade_fee
+            trade_times_pro = trade_times
         else:
             fee_mark = 0
 
-        # count trade times
-        if direction[i - 1] == 0 and direction[i] == 1:
-            open = 1
-        elif direction[i - 1] == 0 and direction[i] == -1:
-            open = -1
-        elif direction[i - 1] == -1 and direction[i] == 1 and open == -1:
-            trade_times += 1
-            open = 1
-        elif direction[i - 1] == 1 and direction[i] == -1 and open == 1:
-            trade_times += 1
-            open = -1
-        elif direction[i - 1] == 1 and direction[i] == 0 and open == 1:
-            trade_times += 1
-            open = 0
-        elif direction[i - 1] == -1 and direction[i] == 0 and open == -1:
-            trade_times += 1
-            open = 0
-
         #compute trade success times for success rate
-        if direction[i - 1] == 0 and direction[i] == 1:
+        if direction[i - 1] == 0 and direction[i] == 1 and result_show.ifstop == 0:
             result_show.open = data[i]
-        elif direction[i - 1] == 0 and direction[i] == -1:
+            result_show.ifstop = 0
+            trade_times += 1
+        elif direction[i - 1] == 0 and direction[i] == -1 and result_show.ifstop == 0:
             result_show.open = data[i]
-        elif direction[i - 1] == 1 and direction[i] == 0:
+            result_show.ifstop = 0
+            trade_times += 1
+        elif result_show.ifstop != 0:
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+        elif direction[i - 1] == 1 and direction[i] == 0 and result_show.ifstop == 0:
             result_show.close = data[i]
             if result_show.close > result_show.open:
                 trade_succeed += 1
@@ -121,7 +115,7 @@ def compute_net_value(data, direction, ai_setting, result_show):
                 < result_show.max_loss:
                 result_show.max_loss = \
                     (result_show.close - result_show.open) / result_show.open
-        elif direction[i - 1] == -1 and direction[i] == 0:
+        elif direction[i - 1] == -1 and direction[i] == 0 and result_show.ifstop == 0:
             result_show.close = data[i]
             if result_show.close < result_show.open:
                 trade_succeed += 1
@@ -133,7 +127,7 @@ def compute_net_value(data, direction, ai_setting, result_show):
                 < result_show.max_loss:
                 result_show.max_loss = \
                     (result_show.open - result_show.close) / result_show.open
-        elif direction[i - 1] == -1 and direction[i] == 1:
+        elif direction[i - 1] == -1 and direction[i] == 1 and result_show.ifstop == 0:
             result_show.close = data[i]
             if result_show.close < result_show.open:
                 trade_succeed += 1
@@ -146,7 +140,9 @@ def compute_net_value(data, direction, ai_setting, result_show):
                 result_show.max_loss = \
                     (result_show.open - result_show.close) / result_show.open
             result_show.open = data[i]
-        elif direction[i - 1] == 1 and direction[i] == -1:
+            result_show.ifstop = 0
+            trade_times += 1
+        elif direction[i - 1] == 1 and direction[i] == -1 and result_show.ifstop == 0:
             result_show.close = data[i]
             if result_show.close > result_show.open:
                 trade_succeed += 1
@@ -159,15 +155,57 @@ def compute_net_value(data, direction, ai_setting, result_show):
                 result_show.max_loss = \
                     (result_show.close - result_show.open) / result_show.open
             result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
 
         #compute net value according to strategy direction
         rt = ai_setting.leverage_rate
         if direction[i - 1] == 1:
-            net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1]) *
-            rt / data[i - 1] + 1 - fee_mark * rt)
+            if data_low[i] > result_show.open * (1 - ai_setting.stop):
+                if direction[i - 2] == 1:
+                    net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1]) *
+                        rt / data[i - 1] + 1 - fee_mark * rt)
+                if direction[i - 2] != 1:
+                    net_value[i] = net_value[i - 1] * ((data[i] - data_open[i]) *
+                        rt / data_open[i] + 1 - fee_mark * rt)
+            if data_low[i] <= result_show.open * (1 - ai_setting.stop):
+                if direction[i - 2] == 1:
+                    net_value[i] = net_value[i - 1] * ((result_show.open *
+                        (1 - ai_setting.stop) - data[i - 1]) *
+                        rt / data[i - 1] + 1 - fee_mark * rt)
+                    result_show.ifstop = 1
+                    stop_times +=1
+                    result_show.close = result_show.open * (1 - ai_setting.stop)
+                if direction[i - 2] != 1:
+                    net_value[i] = net_value[i - 1] * ((result_show.open *
+                        (1 - ai_setting.stop) - data_open[i]) *
+                        rt / data_open[i] + 1 - fee_mark * rt)
+                    result_show.ifstop = 1
+                    stop_times += 1
+                    result_show.close = result_show.open * (1 - ai_setting.stop)
         elif direction[i - 1] == -1:
-            net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i]) *
-            rt / data[i - 1] + 1 - fee_mark * rt)
+            if data_high[i] < result_show.open * (1 + ai_setting.stop):
+                if direction[i - 2] == -1:
+                    net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i]) *
+                        rt / data[i - 1] + 1 - fee_mark * rt)
+                if direction[i - 2] != -1:
+                    net_value[i] = net_value[i - 1] * ((data_open[i] - data[i]) *
+                        rt / data_open[i] + 1 - fee_mark * rt)
+            if data_high[i] >= result_show.open * (1 + ai_setting.stop):
+                if direction[i - 2] == -1:
+                    net_value[i] = net_value[i - 1] * ((data[i - 1] -
+                        result_show.open * (1 + ai_setting.stop)) *
+                        rt / data[i - 1] + 1 - fee_mark * rt)
+                    result_show.ifstop = -1
+                    stop_times += 1
+                    result_show.close = result_show.open * (1 + ai_setting.stop)
+                if direction[i - 2] != -1:
+                    net_value[i] = net_value[i - 1] * ((data_open[i] -
+                        result_show.open * (1 + ai_setting.stop)) *
+                        rt / data_open[i] + 1 - fee_mark * rt)
+                    result_show.ifstop = -1
+                    stop_times += 1
+                    result_show.close = result_show.open * (1 + ai_setting.stop)
         else:
             net_value[i] = net_value[i - 1]
 
@@ -182,6 +220,7 @@ def compute_net_value(data, direction, ai_setting, result_show):
     result_show.std = compute_std(net_value)
     result_show.trade_succeed = trade_succeed
     result_show.trade_times = trade_times
+    result_show.stop_times = stop_times
     print("net value compute has completed.")
     return net_value
 

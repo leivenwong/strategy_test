@@ -35,7 +35,7 @@ class Settings():
         self.leverage_rate = 1
 
         #if stop
-        self.stop = 0.05
+        self.stop = 0.08
 
         #if stopwin
         self.stopwin = 1

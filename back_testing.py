@@ -41,12 +41,12 @@ target_max_retracement = result_show.easy_max_retracement
 
 # fetch direction from strategy
 direction = strategy.macd_ema_strategy(data_close, ai_settings, 9, 26)
-direction_mix = strategy.far_from_strategy(data_close, ai_settings, 9, 0.98, 1.02)
+direction_mix = strategy.rsi_strategy(data_close, ai_settings, 9, 20, 80)
 direction_final = fuc.direction_mix(direction, direction_mix)
 
 # compute result of strategy
-net_value = fuc.compute_net_value(data_close, direction_final, ai_settings,
-    result_show)
+net_value = fuc.compute_net_value(data_close, data_open, data_low, data_high,
+    direction_final, ai_settings, result_show)
 max_retracement = result_show.max_retracement
 r = compute_r(net_value,target_net_value)
 
@@ -62,6 +62,7 @@ if __name__ == '__main__':
     print("Strategy max retracement: " + str(max_retracement))
     print("Trade times: " + str(result_show.trade_times))
     print("Trade succeed: " + str(result_show.trade_succeed))
+    print("Trade stopped: " + str(result_show.stop_times))
     print("Trade success rate: " + str(result_show.trade_succeed
                                        / result_show.trade_times))
     print("Max profit: " + str(result_show.max_profit))
