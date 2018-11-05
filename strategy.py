@@ -12,12 +12,14 @@ def macd_strategy(data_close, ai_settings, mid, long, short):
     print("get strategy...")
     # initiate variate
     direction = [0] * len(data_close)
+    roll = 1
+
     # compute condition
     macd = fuc.compute_macd(data_close, short, long, mid)
-    for i in range(len(data_close)):
-        if macd[i] >= 0:
+    for i in range(roll, len(data_close)):
+        if macd[i - roll] >= 0:
             direction[i] = 1
-        elif macd[i] < 0 and ai_settings.only_buy == False:
+        elif macd[i - roll] < 0 and ai_settings.only_buy == False:
             direction[i] = -1
         else:
             direction[i] = 0
@@ -43,7 +45,7 @@ def macd_ema_strategy(data_close, ai_settings, short, long):
         ema_long[i - roll] < ema_long[i - roll - 1] and ai_settings.only_buy == False:
             direction[i] = -1
         else:
-            direction[i] = 0
+            direction[i] = 'follow'
     return direction
 
 
@@ -85,9 +87,9 @@ def go_with_strategy(data_open, data_close, ai_settings):
     # compute condition
     roll = 1
     for i in range(roll, len(data_close)):
-        if data_open[i] < data_close[i]:
+        if data_open[i - roll] < data_close[i - roll]:
             direction[i] = 1
-        elif data_open[i] > data_close[i] \
+        elif data_open[i - roll] > data_close[i - roll] \
             and ai_settings.only_buy == False:
             direction[i] = -1
         else:
@@ -100,12 +102,13 @@ def far_from_strategy(data_close, ai_settings, cycle, down_far, up_far):
     # initiate variate
     direction = [0] * len(data_close)
     ema = fuc.compute_ema(data_close, cycle)
+    roll = 1
 
     # compute condition
-    for i in range(len(data_close)):
-        if data_close[i] / ema[i] < down_far:
+    for i in range(roll, len(data_close)):
+        if data_close[i - roll] / ema[i - roll] < down_far:
             direction[i] = 1
-        elif data_close[i] / ema[i] > up_far and ai_settings.only_buy == False:
+        elif data_close[i - roll] / ema[i - roll] > up_far and ai_settings.only_buy == False:
             direction[i] = -1
         else:
             direction[i] = 'follow'
@@ -117,12 +120,33 @@ def rsi_strategy(data_close, ai_settings, cycle, small, big):
     # initiate variate
     direction = [0] * len(data_close)
     rsi = fuc.compute_rsi(data_close, cycle)
+    roll = 1
 
     # compute condition
-    for i in range(len(data_close)):
-        if rsi[i] < small:
+    for i in range(roll, len(data_close)):
+        if rsi[i - roll] < small:
             direction[i] = 1
-        elif rsi[i] > big and ai_settings.only_buy == False:
+        elif rsi[i - roll] > big and ai_settings.only_buy == False:
+            direction[i] = -1
+        else:
+            direction[i] = 'follow'
+    return direction
+
+
+def high_low_strategy(data_close, data_low, data_high, ai_settings, plus):
+    print("get strategy...")
+    # initiate variate
+    direction = [0] * len(data_close)
+    ema_low = fuc.compute_ema(data_low, 9)
+    ema_high = fuc.compute_ema(data_high, 9)
+    roll = 1
+
+    # compute condition
+    for i in range(roll, len(data_close)):
+        if ema_low[i - roll] * (1 - plus) > data_close[i - roll]:
+            direction[i] = 1
+        elif ema_high[i - roll] * (1 + plus) < data_close[i - roll] and \
+            ai_settings.only_buy == False:
             direction[i] = -1
         else:
             direction[i] = 'follow'

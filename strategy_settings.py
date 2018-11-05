@@ -35,10 +35,13 @@ class Settings():
         self.leverage_rate = 1
 
         #if stop
-        self.stop = 0.08
+        self.stop = 0.3
 
         #if stopwin
         self.stopwin = 1
+
+        #if jump close and open
+        self.through_night = False
 
         #if only buy
         self.only_buy = False

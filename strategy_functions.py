@@ -92,15 +92,15 @@ def compute_net_value(data, data_open, data_low, data_high, direction,
 
         #compute trade success times for success rate
         if direction[i - 1] == 0 and direction[i] == 1 and result_show.ifstop == 0:
-            result_show.open = data[i]
+            result_show.open = data_open[i]
             result_show.ifstop = 0
             trade_times += 1
         elif direction[i - 1] == 0 and direction[i] == -1 and result_show.ifstop == 0:
-            result_show.open = data[i]
+            result_show.open = data_open[i]
             result_show.ifstop = 0
             trade_times += 1
         elif result_show.ifstop != 0:
-            result_show.open = data[i]
+            result_show.open = data_open[i]
             result_show.ifstop = 0
             trade_times += 1
         elif direction[i - 1] == 1 and direction[i] == 0 and result_show.ifstop == 0:
@@ -139,7 +139,7 @@ def compute_net_value(data, data_open, data_low, data_high, direction,
                     < result_show.max_loss:
                 result_show.max_loss = \
                     (result_show.open - result_show.close) / result_show.open
-            result_show.open = data[i]
+            result_show.open = data_open[i]
             result_show.ifstop = 0
             trade_times += 1
         elif direction[i - 1] == 1 and direction[i] == -1 and result_show.ifstop == 0:
@@ -154,52 +154,52 @@ def compute_net_value(data, data_open, data_low, data_high, direction,
                 < result_show.max_loss:
                 result_show.max_loss = \
                     (result_show.close - result_show.open) / result_show.open
-            result_show.open = data[i]
+            result_show.open = data_open[i]
             result_show.ifstop = 0
             trade_times += 1
 
         #compute net value according to strategy direction
         rt = ai_setting.leverage_rate
-        if direction[i - 1] == 1:
+        if direction[i] == 1:
             if data_low[i] > result_show.open * (1 - ai_setting.stop):
-                if direction[i - 2] == 1:
+                if direction[i - 1] == 1:
                     net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1]) *
                         rt / data[i - 1] + 1 - fee_mark * rt)
-                if direction[i - 2] != 1:
+                if direction[i - 1] != 1:
                     net_value[i] = net_value[i - 1] * ((data[i] - data_open[i]) *
                         rt / data_open[i] + 1 - fee_mark * rt)
             if data_low[i] <= result_show.open * (1 - ai_setting.stop):
-                if direction[i - 2] == 1:
+                if direction[i - 1] == 1:
                     net_value[i] = net_value[i - 1] * ((result_show.open *
                         (1 - ai_setting.stop) - data[i - 1]) *
                         rt / data[i - 1] + 1 - fee_mark * rt)
                     result_show.ifstop = 1
                     stop_times +=1
                     result_show.close = result_show.open * (1 - ai_setting.stop)
-                if direction[i - 2] != 1:
+                if direction[i - 1] != 1:
                     net_value[i] = net_value[i - 1] * ((result_show.open *
                         (1 - ai_setting.stop) - data_open[i]) *
                         rt / data_open[i] + 1 - fee_mark * rt)
                     result_show.ifstop = 1
                     stop_times += 1
                     result_show.close = result_show.open * (1 - ai_setting.stop)
-        elif direction[i - 1] == -1:
+        elif direction[i] == -1:
             if data_high[i] < result_show.open * (1 + ai_setting.stop):
-                if direction[i - 2] == -1:
+                if direction[i - 1] == -1:
                     net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i]) *
                         rt / data[i - 1] + 1 - fee_mark * rt)
-                if direction[i - 2] != -1:
+                if direction[i - 1] != -1:
                     net_value[i] = net_value[i - 1] * ((data_open[i] - data[i]) *
                         rt / data_open[i] + 1 - fee_mark * rt)
             if data_high[i] >= result_show.open * (1 + ai_setting.stop):
-                if direction[i - 2] == -1:
+                if direction[i - 1] == -1:
                     net_value[i] = net_value[i - 1] * ((data[i - 1] -
                         result_show.open * (1 + ai_setting.stop)) *
                         rt / data[i - 1] + 1 - fee_mark * rt)
                     result_show.ifstop = -1
                     stop_times += 1
                     result_show.close = result_show.open * (1 + ai_setting.stop)
-                if direction[i - 2] != -1:
+                if direction[i - 1] != -1:
                     net_value[i] = net_value[i - 1] * ((data_open[i] -
                         result_show.open * (1 + ai_setting.stop)) *
                         rt / data_open[i] + 1 - fee_mark * rt)
@@ -337,12 +337,42 @@ def compute_rsi(data, cycle):
 def direction_mix(direction, direction_mix):
     direction_final = [0] * len(direction)
     for i in range(len(direction)):
-        if direction[i] == 1 and direction_mix[i] == 1:
+        if direction[i] ==1 and  direction_mix[i] == 1:
             direction_final[i] = 1
-        elif direction[i] == -1 and direction_mix[i] == -1:
+        elif direction[i] == -1 and  direction_mix[i] == -1:
             direction_final[i] = -1
         elif direction_mix[i] == 'follow':
             direction_final[i] = direction[i]
+        elif direction[i] == 'follow':
+            direction_final[i] = direction_mix[i]
+        else:
+            direction_final[i] = 0
+    return direction_final
+
+
+def direction_final(direction, direction_mix, data_date, ai_settings):
+    direction_final = [0] * len(direction)
+    for i in range(len(direction)):
+        if direction[i] ==1 and  direction_mix[i] == 1:
+            direction_final[i] = 1
+        elif direction[i] == -1 and  direction_mix[i] == -1:
+            direction_final[i] = -1
+        elif direction_mix[i] == 'follow' and direction[i] != 'follow':
+            direction_final[i] = direction[i]
+        elif direction[i] == 'follow' and direction_mix[i] != 'follow':
+            direction_final[i] = direction_mix[i]
+        elif direction[i] == 'follow' and direction_mix[i] == 'follow':
+            direction_final[i] = 0
+        elif data_date[i][-8:-1] == '15:00:00' and \
+            ai_settings.through_night == False and \
+            ai_settings.fetch_table[-2:-1] != '1d':
+            direction_final[i - 1] = 0
+            direction_final[i] = 0
+        elif data_date[i][-8:-1] == '15:15:00' and \
+            ai_settings.through_night == False and \
+            ai_settings.fetch_table[-2:-1] != '1d':
+            direction_final[i - 1] = 0
+            direction_final[i] = 0
         else:
             direction_final[i] = 0
     return direction_final

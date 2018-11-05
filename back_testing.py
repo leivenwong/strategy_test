@@ -30,8 +30,8 @@ data_high = target.loc[0:, ai_settings.fetch_high]
 data_low = target.loc[0:, ai_settings.fetch_low]
 data_close = target.loc[0:, ai_settings.fetch_close]
 data_date = target.loc[0:, ai_settings.fetch_date]
-data_date = pd.to_datetime(data_date)
-data_date = fuc.to_date(data_date)
+#data_date = pd.to_datetime(data_date)
+#data_date = fuc.to_date(data_date)
 
 #compute result of target index
 target_profit_day = fuc.frofit_per(data_close)
@@ -41,8 +41,12 @@ target_max_retracement = result_show.easy_max_retracement
 
 # fetch direction from strategy
 direction = strategy.macd_ema_strategy(data_close, ai_settings, 9, 26)
-direction_mix = strategy.rsi_strategy(data_close, ai_settings, 9, 20, 80)
-direction_final = fuc.direction_mix(direction, direction_mix)
+direction_mix = strategy.high_low_strategy(data_close, data_low, data_high,
+    ai_settings, 0.05)
+direction_mix_2 = strategy.rsi_strategy(data_close, ai_settings, 9, 10, 90)
+direction_final_pro = fuc.direction_mix(direction, direction_mix)
+direction_final = fuc.direction_final(direction,direction,
+    data_date, ai_settings)
 
 # compute result of strategy
 net_value = fuc.compute_net_value(data_close, data_open, data_low, data_high,
@@ -54,11 +58,26 @@ r = compute_r(net_value,target_net_value)
 result_show.update_net_value(net_value[-1])
 
 #print result if name is main
+cycle_year = 250
+if ai_settings.fetch_table == 'if_5m':
+    cycle_year = 250 * 4 * 60 / 5
+if ai_settings.fetch_table == 'if_1m':
+    cycle_year = 250 * 4 * 60
+if ai_settings.fetch_table == 'ru_5m':
+    cycle_year = 250 * 4.5 * 60 / 5
+if ai_settings.fetch_table == 'ru_1m':
+    cycle_year = 250 * 4.5 * 60
+if ai_settings.fetch_table == 'rb_5m':
+    cycle_year = 250 * 4.5 * 60 / 5
+if ai_settings.fetch_table[-2:-1] == 'rb_1m':
+    cycle_year = 250 * 4.5 * 60
+
 if __name__ == '__main__':
     # print result
     print("Strategy net value: " + str(net_value[-1]))
+    print("Time span: " + str(len(data_close) / cycle_year) + " years")
     print("Strategy R/Y: " + str( -1 + net_value[-1] **
-        (1/(len(data_close) / 250))))
+        (1/(len(data_close) / cycle_year))))
     print("Strategy max retracement: " + str(max_retracement))
     print("Trade times: " + str(result_show.trade_times))
     print("Trade succeed: " + str(result_show.trade_succeed))
@@ -66,7 +85,7 @@ if __name__ == '__main__':
     print("Trade success rate: " + str(result_show.trade_succeed
                                        / result_show.trade_times))
     print("Max profit: " + str(result_show.max_profit))
-    print("Max_loss: " + str(result_show.max_loss))
+    print("Max_loss_without_stop: " + str(result_show.max_loss))
     print("Profit/risk rate: " + str(abs(result_show.max_profit /
                                          result_show.max_loss)))
     print("Index net value: " + str(target_net_value[-1]))
@@ -84,7 +103,7 @@ if __name__ == '__main__':
 
 #show plot if settings is true
 if ai_settings.draw_plot and __name__ == '__main__' \
-        and len(data_close) < 20000:
+        and len(data_close) < 100000:
     fuc.draw_plot(ai_settings, net_value, target_net_value, data_date)
 
 
