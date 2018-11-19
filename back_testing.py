@@ -36,7 +36,7 @@ data_date = target.loc[0:, ai_settings.fetch_date]
 #compute result of target index
 target_profit_day = fuc.frofit_per(data_close)
 target_direction = [1] * len(data_close)
-target_net_value = fuc.compute_easy_net(data_close, result_show)
+target_net_value = fuc.compute_index_net(data_close, result_show)
 target_max_retracement = result_show.easy_max_retracement
 
 # fetch direction from strategy
@@ -45,12 +45,13 @@ direction_mix = strategy.high_low_strategy(data_close, data_low, data_high,
     ai_settings, 0.05)
 direction_mix_2 = strategy.rsi_strategy(data_close, ai_settings, 9, 10, 90)
 direction_final_pro = fuc.direction_mix(direction, direction_mix)
-direction_final = fuc.direction_final(direction,direction,
+direction_final = fuc.direction_final(direction, direction,
     data_date, ai_settings)
 
 # compute result of strategy
-net_value = fuc.compute_net_value(data_close, data_open, data_low, data_high,
-    direction_final, ai_settings, result_show)
+transaction = fuc.compute_net_value_not_jump_night(data_close, data_open, data_low,
+    data_high, direction_final, ai_settings, result_show)
+net_value = list(transaction['net_value'])
 max_retracement = result_show.max_retracement
 r = compute_r(net_value,target_net_value)
 
@@ -93,11 +94,17 @@ if __name__ == '__main__':
     print("Correlation r: " + str(r))
     out = pd.DataFrame()
     out['date'] = data_date
-    out['direction'] = direction_final
-    out['net_value'] = net_value
     out['index_net_value'] = target_net_value
+    out['net_value'] = net_value
+    out['direction'] = direction_final
+    out['open'] = transaction['open']
+    out['close'] = transaction['close']
+    out['open_mark'] = transaction['open_mark']
+    out['close_mark'] = transaction['close_mark']
+    out['stop'] = transaction['stop']
 
-    if len(data_close) < 20000:
+
+    if len(data_close) < 70000:
         print("writting excel...")
         out.to_excel('backtesting.xlsx', 'Sheet1')
 

@@ -17,6 +17,16 @@ def read_sql_merged(ai_settings):
     print("Out Mysql")
     return df
 
+
+def read_sql_wang2(ai_settings):
+    """read data from sql database"""
+    print("Enter Mysql")
+    engine = create_engine(ai_settings.sql_path_wang2)
+    df = pd.read_sql(sql="select * from "+ai_settings.fetch_table, con=engine)
+    print("Out Mysql")
+    return df
+
+
 def read_sql_backtesting(ai_settings):
     """read data from sql database"""
     print("Enter Mysql")
@@ -24,6 +34,7 @@ def read_sql_backtesting(ai_settings):
     df = pd.read_sql(sql="select * from "+ai_settings.fetch_table, con=engine)
     print("Out Mysql")
     return df
+
 
 def read_file(ai_settings):
     """read data from data_path"""
@@ -43,9 +54,108 @@ def compute_ma(data,cycle):
     return ma_cycle
 
 
-def compute_easy_net(data,result_show):
+def compute_easy_net(data, direction, result_show):
     """compute easy net value for target"""
     print("compute easy net value...")
+    net_value = [1] * len(data)
+    max_value = 0
+    trade_times = 0
+    trade_succeed = 0
+
+    # initiate max retracement
+    result_show.max_retracement = 0
+    for i in range(1, len(data)):
+        #print("Easy net: "+str(i)+" of "+str(len(data)))
+
+        # compute trade success times for success rate
+        if direction[i - 1] == 0 and direction[i] == 1:
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+        elif direction[i - 1] == 0 and direction[i] == -1:
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+        elif direction[i - 1] == 1 and direction[i] == 0:
+            result_show.close = data[i]
+            if result_show.close > result_show.open:
+                trade_succeed += 1
+            if (result_show.close - result_show.open) / result_show.open \
+                    > result_show.max_profit:
+                result_show.max_profit = \
+                    (result_show.close - result_show.open) / result_show.open
+            if (result_show.close - result_show.open) / result_show.open \
+                    < result_show.max_loss:
+                result_show.max_loss = \
+                    (result_show.close - result_show.open) / result_show.open
+        elif direction[i - 1] == -1 and direction[i] == 0:
+            result_show.close = data[i]
+            if result_show.close < result_show.open:
+                trade_succeed += 1
+            if (result_show.open - result_show.close) / result_show.open \
+                    > result_show.max_profit:
+                result_show.max_profit = \
+                    (result_show.open - result_show.close) / result_show.open
+            if (result_show.open / result_show.close) / result_show.open \
+                    < result_show.max_loss:
+                result_show.max_loss = \
+                    (result_show.open - result_show.close) / result_show.open
+        elif direction[i - 1] == -1 and direction[i] == 1:
+            result_show.close = data[i]
+            if result_show.close < result_show.open:
+                trade_succeed += 1
+            if (result_show.open - result_show.close) / result_show.open \
+                    > result_show.max_profit:
+                result_show.max_profit = \
+                    (result_show.open - result_show.close) / result_show.open
+            if (result_show.open / result_show.close) / result_show.open \
+                    < result_show.max_loss:
+                result_show.max_loss = \
+                    (result_show.open - result_show.close) / result_show.open
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+        elif direction[i - 1] == 1 and direction[i] == -1:
+            result_show.close = data[i]
+            if result_show.close > result_show.open:
+                trade_succeed += 1
+            if (result_show.close - result_show.open) / result_show.open \
+                    > result_show.max_profit:
+                result_show.max_profit = \
+                    (result_show.close - result_show.open) / result_show.open
+            if (result_show.close - result_show.open) / result_show.open \
+                    < result_show.max_loss:
+                result_show.max_loss = \
+                    (result_show.close - result_show.open) / result_show.open
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+
+        #compute easy net value
+        if direction[i - 1] == 1:
+            net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1]) / data[i - 1] + 1)
+        elif direction[i - 1] == -1:
+            net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i]) / data[i - 1] + 1)
+        else:
+            net_value[i] = net_value[i - 1]
+
+        #update max retracement
+        if net_value[i] > max_value:
+            max_value = net_value[i]
+        retracement = (max_value - net_value[i]) / max_value
+        if retracement > result_show.max_retracement:
+            result_show.max_retracement = retracement
+    #update std and trade success times
+    result_show.std = compute_std(net_value)
+    result_show.trade_succeed = trade_succeed
+    result_show.trade_times = trade_times
+    print("easy net value compute has completed.")
+    return net_value
+
+
+def compute_index_net(data,result_show):
+    """compute index net value for target"""
+    print("compute index net value...")
     net_value = [1] * len(data)
     max_value = 0
 
@@ -63,11 +173,11 @@ def compute_easy_net(data,result_show):
         retracement = (max_value - net_value[i]) / max_value
         if retracement > result_show.easy_max_retracement:
             result_show.easy_max_retracement = retracement
-    print("easy net value compute has completed.")
+    print("index net value compute has completed.")
     return net_value
 
 
-def compute_net_value(data, data_open, data_low, data_high, direction,
+def compute_net_value_not_jump_night(data, data_open, data_low, data_high, direction,
     ai_setting, result_show):
     """compute net value list"""
     print("begin compute net value...")
@@ -78,11 +188,28 @@ def compute_net_value(data, data_open, data_low, data_high, direction,
     trade_times = 0
     trade_times_pro = 0
     stop_times = 0
+    open_mark = 0
+    close_mark = 0
 
     # initiate max retracement
     result_show.max_retracement = 0
+    result_show.max_loss = 0.00001
+    result_show.max_profit = 0.00001
+    result_show.open = data_open[0]
+    result_show.close = data[0]
+    open = [0] * len(data)
+    close = [0] * len(data)
+    open_mark_counter = [0] * len(data)
+    close_mark_counter = [0] * len(data)
+    stop = [0] * len(data)
     for i in range(1, len(data)):
-
+        print("clcye: " + str(i))
+        print(result_show.open)
+        print(result_show.close)
+        print(open_mark)
+        print(close_mark)
+        print(result_show.max_profit)
+        print(result_show.max_loss)
         #compute fees
         if trade_times_pro != trade_times:
             fee_mark = ai_setting.trade_fee
@@ -90,124 +217,139 @@ def compute_net_value(data, data_open, data_low, data_high, direction,
         else:
             fee_mark = 0
 
-        #compute trade success times for success rate
-        if direction[i - 1] == 0 and direction[i] == 1 and result_show.ifstop == 0:
-            result_show.open = data_open[i]
-            result_show.ifstop = 0
-            trade_times += 1
-        elif direction[i - 1] == 0 and direction[i] == -1 and result_show.ifstop == 0:
-            result_show.open = data_open[i]
-            result_show.ifstop = 0
-            trade_times += 1
-        elif result_show.ifstop != 0:
-            result_show.open = data_open[i]
-            result_show.ifstop = 0
-            trade_times += 1
-        elif direction[i - 1] == 1 and direction[i] == 0 and result_show.ifstop == 0:
-            result_show.close = data[i]
-            if result_show.close > result_show.open:
-                trade_succeed += 1
-            if (result_show.close - result_show.open) / result_show.open \
-                > result_show.max_profit:
-                result_show.max_profit = \
-                    (result_show.close - result_show.open) / result_show.open
-            if (result_show.close -  result_show.open) / result_show.open \
-                < result_show.max_loss:
-                result_show.max_loss = \
-                    (result_show.close - result_show.open) / result_show.open
-        elif direction[i - 1] == -1 and direction[i] == 0 and result_show.ifstop == 0:
-            result_show.close = data[i]
-            if result_show.close < result_show.open:
-                trade_succeed += 1
-            if (result_show.open - result_show.close) / result_show.open \
-                > result_show.max_profit:
-                result_show.max_profit = \
-                    (result_show.open - result_show.close) / result_show.open
-            if (result_show.open / result_show.close) / result_show.open \
-                < result_show.max_loss:
-                result_show.max_loss = \
-                    (result_show.open - result_show.close) / result_show.open
-        elif direction[i - 1] == -1 and direction[i] == 1 and result_show.ifstop == 0:
-            result_show.close = data[i]
-            if result_show.close < result_show.open:
-                trade_succeed += 1
-            if (result_show.open - result_show.close) / result_show.open \
-                    > result_show.max_profit:
-                result_show.max_profit = \
-                    (result_show.open - result_show.close) / result_show.open
-            if (result_show.open / result_show.close) / result_show.open \
-                    < result_show.max_loss:
-                result_show.max_loss = \
-                    (result_show.open - result_show.close) / result_show.open
-            result_show.open = data_open[i]
-            result_show.ifstop = 0
-            trade_times += 1
-        elif direction[i - 1] == 1 and direction[i] == -1 and result_show.ifstop == 0:
-            result_show.close = data[i]
-            if result_show.close > result_show.open:
-                trade_succeed += 1
-            if (result_show.close - result_show.open) / result_show.open \
-                > result_show.max_profit:
-                result_show.max_profit = \
-                    (result_show.close - result_show.open) / result_show.open
-            if (result_show.close - result_show.open) / result_show.open \
-                < result_show.max_loss:
-                result_show.max_loss = \
-                    (result_show.close - result_show.open) / result_show.open
-            result_show.open = data_open[i]
-            result_show.ifstop = 0
-            trade_times += 1
-
-        #compute net value according to strategy direction
+        # compute net value according to strategy direction
         rt = ai_setting.leverage_rate
-        if direction[i] == 1:
-            if data_low[i] > result_show.open * (1 - ai_setting.stop):
-                if direction[i - 1] == 1:
-                    net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1]) *
-                        rt / data[i - 1] + 1 - fee_mark * rt)
-                if direction[i - 1] != 1:
-                    net_value[i] = net_value[i - 1] * ((data[i] - data_open[i]) *
-                        rt / data_open[i] + 1 - fee_mark * rt)
-            if data_low[i] <= result_show.open * (1 - ai_setting.stop):
-                if direction[i - 1] == 1:
-                    net_value[i] = net_value[i - 1] * ((result_show.open *
-                        (1 - ai_setting.stop) - data[i - 1]) *
-                        rt / data[i - 1] + 1 - fee_mark * rt)
-                    result_show.ifstop = 1
-                    stop_times +=1
-                    result_show.close = result_show.open * (1 - ai_setting.stop)
-                if direction[i - 1] != 1:
-                    net_value[i] = net_value[i - 1] * ((result_show.open *
-                        (1 - ai_setting.stop) - data_open[i]) *
-                        rt / data_open[i] + 1 - fee_mark * rt)
-                    result_show.ifstop = 1
-                    stop_times += 1
-                    result_show.close = result_show.open * (1 - ai_setting.stop)
-        elif direction[i] == -1:
-            if data_high[i] < result_show.open * (1 + ai_setting.stop):
-                if direction[i - 1] == -1:
-                    net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i]) *
-                        rt / data[i - 1] + 1 - fee_mark * rt)
-                if direction[i - 1] != -1:
-                    net_value[i] = net_value[i - 1] * ((data_open[i] - data[i]) *
-                        rt / data_open[i] + 1 - fee_mark * rt)
-            if data_high[i] >= result_show.open * (1 + ai_setting.stop):
-                if direction[i - 1] == -1:
-                    net_value[i] = net_value[i - 1] * ((data[i - 1] -
-                        result_show.open * (1 + ai_setting.stop)) *
-                        rt / data[i - 1] + 1 - fee_mark * rt)
-                    result_show.ifstop = -1
-                    stop_times += 1
-                    result_show.close = result_show.open * (1 + ai_setting.stop)
-                if direction[i - 1] != -1:
-                    net_value[i] = net_value[i - 1] * ((data_open[i] -
-                        result_show.open * (1 + ai_setting.stop)) *
-                        rt / data_open[i] + 1 - fee_mark * rt)
-                    result_show.ifstop = -1
-                    stop_times += 1
-                    result_show.close = result_show.open * (1 + ai_setting.stop)
+        if direction[i - 1] == 1:
+            if data_open[i] < result_show.open * (1 - ai_setting.stop):
+                net_value[i] = net_value[i - 1] * ((data_open[i] - data[i - 1])
+                    * rt / data[i - 1] + 1 - fee_mark * rt)
+                result_show.ifstop = 1
+                stop_times += 1
+                stop[i] = data_open[i]
+                result_show.close = data_open[i]
+                close_mark += 1
+                close[i] = result_show.close
+                close_mark_counter[i] = close_mark
+            elif data_low[i] <= result_show.open * (1 - ai_setting.stop):
+                net_value[i] = net_value[i - 1] * ((result_show.open *
+                    (1 - ai_setting.stop) - data[i - 1]) * rt /
+                    data[i - 1] + 1 - fee_mark * rt)
+                result_show.ifstop = 1
+                stop_times += 1
+                stop[i] = result_show.open * (1 - ai_setting.stop)
+                result_show.close = result_show.open * (1 - ai_setting.stop)
+                close_mark += 1
+                close[i] = result_show.close
+                close_mark_counter[i] = close_mark
+            else:
+                net_value[i] = net_value[i - 1] * ((data[i] - data[i - 1]) *
+                    rt / data[i - 1] + 1 - fee_mark * rt)
+            if close_mark == open_mark:
+                result_show.update_max_pl_up()
+        elif direction[i - 1] == -1:
+            if data_open[i] > result_show.open * (1 + ai_setting.stop):
+                net_value[i] = net_value[i - 1] * ((data[i - 1] -
+                    data_open[i]) * rt / data[i - 1] + 1 - fee_mark * rt)
+                result_show.ifstop = -1
+                stop_times += 1
+                stop[i] = data_open[i]
+                result_show.close = data_open[i]
+                close_mark += 1
+                close[i] = result_show.close
+                close_mark_counter[i] = close_mark
+            elif data_high[i] >= result_show.open * (1 + ai_setting.stop):
+                net_value[i] = net_value[i - 1] * ((data[i - 1] -
+                result_show.open * (1 + ai_setting.stop)) *
+                rt / data[i - 1] + 1 - fee_mark * rt)
+                result_show.ifstop = -1
+                stop_times += 1
+                stop[i] = result_show.open * (1 + ai_setting.stop)
+                result_show.close = result_show.open * (1 + ai_setting.stop)
+                close_mark += 1
+                close[i] = result_show.close
+                close_mark_counter[i] = close_mark
+            else:
+                net_value[i] = net_value[i - 1] * ((data[i - 1] - data[i]) *
+                    rt / data[i - 1] + 1 - fee_mark * rt)
+            if close_mark == open_mark:
+                result_show.update_max_pl_down()
         else:
             net_value[i] = net_value[i - 1]
+
+        #compute trade success times for success rate
+        if direction[i - 1] == 0 and direction[i] == 1 and close_mark == open_mark:
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+            open_mark += 1
+            open[i] = data[i]
+            open_mark_counter[i] = open_mark
+        elif direction[i - 1] == 0 and direction[i] == -1 and close_mark == open_mark:
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+            open_mark += 1
+            open[i] = data[i]
+            open_mark_counter[i] = open_mark
+        elif result_show.ifstop != 0 and direction[i] != 0 and close_mark == open_mark:
+            result_show.open = data[i]
+            result_show.ifstop = 0
+            trade_times += 1
+            open_mark += 1
+            open[i] = data[i]
+            open_mark_counter[i] = open_mark
+        elif direction[i - 1] == 1 and direction[i] == 0 and result_show.ifstop == 0:
+            if close_mark < open_mark:
+                result_show.close = data[i]
+                close_mark += 1
+                close[i] = data[i]
+                close_mark_counter[i] = close_mark
+            if result_show.close > result_show.open:
+                trade_succeed += 1
+            if close_mark == open_mark:
+                result_show.update_max_pl_up()
+        elif direction[i - 1] == -1 and direction[i] == 0 and result_show.ifstop == 0:
+            if close_mark < open_mark:
+                result_show.close = data[i]
+                close_mark += 1
+                close[i] = data[i]
+                close_mark_counter[i] = close_mark
+            if result_show.close < result_show.open:
+                trade_succeed += 1
+            if close_mark == open_mark:
+                result_show.update_max_pl_down()
+        elif direction[i - 1] == -1 and direction[i] == 1 and result_show.ifstop == 0:
+            if close_mark < open_mark:
+                result_show.close = data[i]
+                close_mark += 1
+                close[i] = data[i]
+                close_mark_counter[i] = close_mark
+            if result_show.close < result_show.open:
+                trade_succeed += 1
+            if close_mark == open_mark:
+                result_show.update_max_pl_down()
+                result_show.open = data[i]
+                result_show.ifstop = 0
+                trade_times += 1
+                open_mark += 1
+                open[i] = data[i]
+                open_mark_counter[i] = open_mark
+        elif direction[i - 1] == 1 and direction[i] == -1 and result_show.ifstop == 0:
+            if close_mark < open_mark:
+                result_show.close = data[i]
+                close_mark += 1
+                close[i] = data[i]
+                close_mark_counter[i] = close_mark
+            if result_show.close > result_show.open:
+                trade_succeed += 1
+            if open_mark == close_mark:
+                result_show.update_max_pl_up()
+                result_show.open = data[i]
+                result_show.ifstop = 0
+                trade_times += 1
+                open_mark += 1
+                open[i] = data[i]
+                open_mark_counter[i] = open_mark
 
         #update max retracement
         if net_value[i] > max_value:
@@ -222,7 +364,14 @@ def compute_net_value(data, data_open, data_low, data_high, direction,
     result_show.trade_times = trade_times
     result_show.stop_times = stop_times
     print("net value compute has completed.")
-    return net_value
+    out = pd.DataFrame()
+    out['net_value'] = net_value
+    out['open'] = open
+    out['close'] = close
+    out['open_mark'] = open_mark_counter
+    out['close_mark'] = close_mark_counter
+    out['stop'] = stop
+    return out
 
 
 def frofit_per(data_close):
@@ -345,6 +494,18 @@ def direction_mix(direction, direction_mix):
             direction_final[i] = direction[i]
         elif direction[i] == 'follow':
             direction_final[i] = direction_mix[i]
+        else:
+            direction_final[i] = 0
+    return direction_final
+
+
+def direction_inverse(direction):
+    direction_final = [0] * len(direction)
+    for i in range(len(direction)):
+        if direction[i] == 1:
+            direction_final[i] = -1
+        elif direction[i] == -1:
+            direction_final[i] = 1
         else:
             direction_final[i] = 0
     return direction_final

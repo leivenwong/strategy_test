@@ -7,8 +7,12 @@ class Settings():
         #read Mysql database's path
         self.sql_path_merged = 'mysql+pymysql://ctp_user:ctp_password' \
             '@127.0.0.1/ctp_merged_mq?charset=utf8'
+
         self.sql_path_backtesting = 'mysql+pymysql://ctp_user:ctp_password' \
             '@127.0.0.1/ctp_backtesting?charset=utf8'
+
+        self.sql_path_wang2 = 'mysql+pymysql://wang_2:wang_2' \
+            '@127.0.0.1/wang_2?charset=utf8'
 
         #set which table will used in mysql database
         self.fetch_table = 'if_1d'
@@ -35,17 +39,17 @@ class Settings():
         self.leverage_rate = 1
 
         #if stop
-        self.stop = 0.3
+        self.stop = 0.06
 
         #if stopwin
-        self.stopwin = 1
+        self.stopwin = 0.6
 
         #if jump close and open
-        self.through_night = False
+        self.through_night = True
 
         #if only buy
         self.only_buy = False
 
         #if want to draw polt
-        self.draw_plot = True
+        self.draw_plot = False
 

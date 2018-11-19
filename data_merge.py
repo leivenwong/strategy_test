@@ -1,15 +1,6 @@
 import pandas as pd
-import random as rd
-import math
-import matplotlib.pyplot as plt
-import numpy as np
-from numpy.linalg import cholesky
-import datetime
-import time
 from sqlalchemy import create_engine
-
-import strategy_functions as fuc
-import sys
+import pymysql
 
 table_level_list = ['_1m', '_5m', '_15m', '_1h', '_1d']
 table_name_list = ['if', 'ih', 'ic', 'ru', 'rb']
@@ -158,7 +149,30 @@ for name in table_name_list:
         out['volumn'] = volumn
         out['counter'] = counter
         print('write mysql')
+        connect = pymysql.connect(
+            user="wang_2",
+            password="wang_2",
+            host="127.0.0.1",
+            port=3306,
+            db="python_merge",
+            charset="utf8"
+        )
+        conn = connect.cursor()  # 创建操作游标
+        conn.execute("drop table if exists " + table_name)  # 如果表存在则删除
+        sql = "create table " + table_name + \
+              "(utc BIGINT(20), " \
+              "utc_string CHAR(50), " \
+              "type CHAR(50), " \
+              "open_price DOUBLE, " \
+              "high_price DOUBLE, " \
+              "low_price DOUBLE, " \
+              "close_price DOUBLE, " \
+              "volumn DOUBLE, " \
+              "counter DOUBLE)"
+        conn.execute(sql)  # 创建表
+        conn.close()  # 关闭游标连接
+        connect.close()  # 关闭数据库服务器连接 释放内存
         engine = create_engine(
             'mysql+pymysql://wang_2:wang_2@127.0.0.1/python_merge?charset=utf8')
-        out.to_sql(table_name, engine, if_exists='replace', index=False)
+        out.to_sql(table_name, engine, if_exists='append', index=False)
         print('write completed')

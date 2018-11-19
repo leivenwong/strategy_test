@@ -26,7 +26,7 @@ data_low = target.loc[0:, ai_settings.fetch_low]
 data_date = target.loc[0:, ai_settings.fetch_date]
 data_date = fuc.date_format(data_date)
 target_direction = [1] * len(data_close)
-target_net_value = fuc.compute_easy_net(data_close, result_show)
+target_net_value = fuc.compute_index_net(data_close, result_show)
 
 #initiate parameters
 step_1 = 0.01
