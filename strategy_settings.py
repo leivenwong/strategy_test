@@ -39,7 +39,7 @@ class Settings():
         self.leverage_rate = 1
 
         #if stop
-        self.stop = 0.06
+        self.stop = 0.2
 
         #if stopwin
         self.stopwin = 0.6
@@ -51,5 +51,5 @@ class Settings():
         self.only_buy = False
 
         #if want to draw polt
-        self.draw_plot = False
+        self.draw_plot = True
 

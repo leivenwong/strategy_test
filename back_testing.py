@@ -9,6 +9,7 @@ import time
 
 from strategy_settings import Settings
 import strategy_functions as fuc
+import transaction as tran
 import result
 import strategy
 import sys
@@ -49,7 +50,7 @@ direction_final = fuc.direction_final(direction, direction,
     data_date, ai_settings)
 
 # compute result of strategy
-transaction = fuc.compute_net_value_not_jump_night(data_close, data_open, data_low,
+transaction = tran.compute_net_value_not_jump_night(data_close, data_open, data_low,
     data_high, direction_final, ai_settings, result_show)
 net_value = list(transaction['net_value'])
 max_retracement = result_show.max_retracement
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     print("Trade success rate: " + str(result_show.trade_succeed
                                        / result_show.trade_times))
     print("Max profit: " + str(result_show.max_profit))
-    print("Max_loss_without_stop: " + str(result_show.max_loss))
+    print("Max_loss: " + str(result_show.max_loss))
     print("Profit/risk rate: " + str(abs(result_show.max_profit /
                                          result_show.max_loss)))
     print("Index net value: " + str(target_net_value[-1]))
@@ -94,6 +95,10 @@ if __name__ == '__main__':
     print("Correlation r: " + str(r))
     out = pd.DataFrame()
     out['date'] = data_date
+    out['data_open'] = data_open
+    out['data_high'] = data_high
+    out['data_low'] = data_low
+    out['data_close'] = data_close
     out['index_net_value'] = target_net_value
     out['net_value'] = net_value
     out['direction'] = direction_final
