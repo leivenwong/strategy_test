@@ -2,6 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 import pymysql
 
+
 table_level_list = ['_1m', '_5m', '_15m', '_1h', '_1d']
 table_name_list = ['if', 'ih', 'ic', 'ru', 'rb']
 
@@ -167,12 +168,15 @@ for name in table_name_list:
               "high_price DOUBLE, " \
               "low_price DOUBLE, " \
               "close_price DOUBLE, " \
-              "volumn DOUBLE, " \
-              "counter DOUBLE)"
+              "volumn BIGINT(20), " \
+              "counter INT(11), " \
+              "PRIMARY KEY (`utc`))"
         conn.execute(sql)  # 创建表
-        conn.close()  # 关闭游标连接
-        connect.close()  # 关闭数据库服务器连接 释放内存
+
         engine = create_engine(
             'mysql+pymysql://wang_2:wang_2@127.0.0.1/python_merge?charset=utf8')
         out.to_sql(table_name, engine, if_exists='append', index=False)
+
+        conn.close()  # 关闭游标连接
+        connect.close()  # 关闭数据库服务器连接 释放内存
         print('write completed')
