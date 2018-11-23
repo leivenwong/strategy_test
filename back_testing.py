@@ -22,7 +22,7 @@ result_show = result.Result()
 result_show.reset_net_value()
 
 #read raw data
-target = fuc.read_sql_merged(ai_settings)
+target = fuc.read_sql_wang2(ai_settings)
 target = pd.DataFrame(target)
 
 #select close price for compute
@@ -50,8 +50,12 @@ direction_final = fuc.direction_final(direction, direction,
     data_date, ai_settings)
 
 # compute result of strategy
-transaction = tran.compute_net_value_not_jump_night(data_close, data_open, data_low,
-    data_high, direction_final, ai_settings, result_show)
+if ai_settings.jump_night == True:
+    transaction = tran.compute_net_value_jump_night(data_close, data_open,
+        data_low, data_high, direction_final, ai_settings, result_show, data_date)
+if ai_settings.jump_night == False:
+    transaction = tran.compute_net_value_not_jump_night(data_close, data_open,
+        data_low, data_high, direction_final, ai_settings, result_show)
 net_value = list(transaction['net_value'])
 max_retracement = result_show.max_retracement
 r = compute_r(net_value,target_net_value)

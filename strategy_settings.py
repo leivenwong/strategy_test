@@ -15,7 +15,7 @@ class Settings():
             '@127.0.0.1/wang_2?charset=utf8'
 
         #set which table will used in mysql database
-        self.fetch_table = 'if_1d'
+        self.fetch_table = 'ru_5m'
 
         #fetch date column in raw data
         self.fetch_close = "close_price"
@@ -39,13 +39,13 @@ class Settings():
         self.leverage_rate = 1
 
         #if stop
-        self.stop = 0.2
+        self.stop = 0.01
 
         #if stopwin
         self.stopwin = 0.6
 
         #if jump close and open
-        self.through_night = True
+        self.jump_night = True
 
         #if only buy
         self.only_buy = False

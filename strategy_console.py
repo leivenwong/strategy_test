@@ -28,4 +28,4 @@ data_date = target.loc[0:, ai_settings.fetch_date]
 #data_date = fuc.to_date(data_date)
 
 data_date = list(data_date)
-print(ai_settings.fetch_table[3:])
+print(data_date[-1][11:])

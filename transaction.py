@@ -224,6 +224,8 @@ def compute_net_value_jump_night(data, data_open, data_low, data_high,
     open_mark_counter = [0] * len(data)
     close_mark_counter = [0] * len(data)
     stop = [0] * len(data)
+    data_date = list(data_date)
+
     for i in range(1, len(data)):
         #compute fees
         if trade_times_pro != trade_times:
@@ -304,32 +306,104 @@ def compute_net_value_jump_night(data, data_open, data_low, data_high,
                     trade_succeed += 1
 
         elif ai_setting.fetch_table[3:] != '1d':
-            if direction[i - 1] == 0 and direction[
-                i] == 1 and close_mark == open_mark:
+            #transaction open
+            if direction[i - 1] == 0 and direction[i] == 1 \
+                    and close_mark == open_mark and data_date[i][11:] \
+                    != '15:00:00' and data_date[i][11:] != '15:05:00' \
+                    and data_date[i][11:] != '15:10:00' and \
+                    data_date[i][11:] != '15:15:00':
                 result_show.open = data[i]
                 result_show.ifstop = 0
                 trade_times += 1
                 open_mark += 1
                 open[i] = data[i]
                 open_mark_counter[i] = open_mark
-            elif direction[i - 1] == 0 and direction[
-                i] == -1 and close_mark == open_mark:
+            elif direction[i - 1] == 0 and direction[i] == -1 \
+                    and close_mark == open_mark:
                 result_show.open = data[i]
                 result_show.ifstop = 0
                 trade_times += 1
                 open_mark += 1
                 open[i] = data[i]
                 open_mark_counter[i] = open_mark
-            elif result_show.ifstop != 0 and direction[
-                i] != 0 and close_mark == open_mark:
+            elif result_show.ifstop != 0 and direction[i] != 0 \
+                    and close_mark == open_mark:
                 result_show.open = data[i]
                 result_show.ifstop = 0
                 trade_times += 1
                 open_mark += 1
                 open[i] = data[i]
                 open_mark_counter[i] = open_mark
-            elif direction[i - 1] == 1 and direction[
-                i] == 0 and result_show.ifstop == 0:
+
+            # transactioning and compute net value
+            if direction[i - 1] == 1:
+                if data_open[i] < result_show.open * (1 - ai_setting.stop) \
+                        and open_mark > close_mark:
+                    net_value[i] = net_value[i - 1] * ((data_open[i] - data[i - 1])
+                                * rt / data[i - 1] + 1 - fee_mark * rt)
+                    result_show.ifstop = 1
+                    stop_times += 1
+                    stop[i] = data_open[i]
+                    result_show.close = data_open[i]
+                    close_mark += 1
+                    close[i] = result_show.close
+                    close_mark_counter[i] = close_mark
+                elif data_low[i] <= result_show.open * (1 - ai_setting.stop) \
+                        and open_mark > close_mark:
+                    net_value[i] = net_value[i - 1] * ((result_show.open *
+                            (1 - ai_setting.stop) - data[i - 1]) * rt /
+                            data[i - 1] + 1 - fee_mark * rt)
+                    result_show.ifstop = 1
+                    stop_times += 1
+                    stop[i] = result_show.open * (1 - ai_setting.stop)
+                    result_show.close = result_show.open * (
+                                1 - ai_setting.stop)
+                    close_mark += 1
+                    close[i] = result_show.close
+                    close_mark_counter[i] = close_mark
+                else:
+                    net_value[i] = net_value[i - 1] * (
+                                (data[i] - data[i - 1]) *
+                                rt / data[i - 1] + 1 - fee_mark * rt)
+                if close_mark == open_mark:
+                    result_show.update_max_pl_up()
+            elif direction[i - 1] == -1:
+                if data_open[i] > result_show.open * (1 + ai_setting.stop) \
+                        and open_mark > close_mark:
+                    net_value[i] = net_value[i - 1] * ((data[i - 1] -
+                        data_open[i]) * rt / data[i - 1] + 1 - fee_mark * rt)
+                    result_show.ifstop = -1
+                    stop_times += 1
+                    stop[i] = data_open[i]
+                    result_show.close = data_open[i]
+                    close_mark += 1
+                    close[i] = result_show.close
+                    close_mark_counter[i] = close_mark
+                elif data_high[i] >= result_show.open * (
+                        1 + ai_setting.stop) \
+                        and open_mark > close_mark:
+                    net_value[i] = net_value[i - 1] * ((data[i - 1] -
+                        result_show.open * (1 + ai_setting.stop)) *
+                        rt / data[i - 1] + 1 - fee_mark * rt)
+                    result_show.ifstop = -1
+                    stop_times += 1
+                    stop[i] = result_show.open * (1 + ai_setting.stop)
+                    result_show.close = result_show.open * (1 + ai_setting.stop)
+                    close_mark += 1
+                    close[i] = result_show.close
+                    close_mark_counter[i] = close_mark
+                else:
+                    net_value[i] = net_value[i - 1] * (
+                                (data[i - 1] - data[i]) *
+                                rt / data[i - 1] + 1 - fee_mark * rt)
+                if close_mark == open_mark:
+                    result_show.update_max_pl_down()
+            else:
+                net_value[i] = net_value[i - 1]
+
+            #transaction close
+            if direction[i - 1] == 1 and direction[i] == 0 \
+                    and result_show.ifstop == 0:
                 if close_mark < open_mark:
                     result_show.close = data[i]
                     close_mark += 1
@@ -339,8 +413,8 @@ def compute_net_value_jump_night(data, data_open, data_low, data_high,
                     trade_succeed += 1
                 if close_mark == open_mark:
                     result_show.update_max_pl_up()
-            elif direction[i - 1] == -1 and direction[
-                i] == 0 and result_show.ifstop == 0:
+            elif direction[i - 1] == -1 and direction[i] == 0 \
+                    and result_show.ifstop == 0:
                 if close_mark < open_mark:
                     result_show.close = data[i]
                     close_mark += 1
@@ -350,8 +424,8 @@ def compute_net_value_jump_night(data, data_open, data_low, data_high,
                     trade_succeed += 1
                 if close_mark == open_mark:
                     result_show.update_max_pl_down()
-            elif direction[i - 1] == -1 and direction[
-                i] == 1 and result_show.ifstop == 0:
+            elif direction[i - 1] == -1 and direction[i] == 1 \
+                    and result_show.ifstop == 0:
                 if close_mark < open_mark:
                     result_show.close = data[i]
                     close_mark += 1
@@ -367,8 +441,8 @@ def compute_net_value_jump_night(data, data_open, data_low, data_high,
                     open_mark += 1
                     open[i] = data[i]
                     open_mark_counter[i] = open_mark
-            elif direction[i - 1] == 1 and direction[
-                i] == -1 and result_show.ifstop == 0:
+            elif direction[i - 1] == 1 and direction[i] == -1 \
+                    and result_show.ifstop == 0:
                 if close_mark < open_mark:
                     result_show.close = data[i]
                     close_mark += 1
@@ -384,6 +458,14 @@ def compute_net_value_jump_night(data, data_open, data_low, data_high,
                     open_mark += 1
                     open[i] = data[i]
                     open_mark_counter[i] = open_mark
+            elif data_date[i][11:] == '15:00:00':
+                if close_mark < open_mark:
+                    result_show.close = data[i]
+                    close_mark += 1
+                    close[i] = data[i]
+                    close_mark_counter[i] = close_mark
+                if result_show.close > result_show.open:
+                    trade_succeed += 1
 
         #update max retracement
         if net_value[i] > max_value:
