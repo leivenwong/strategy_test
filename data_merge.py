@@ -3,27 +3,56 @@ from sqlalchemy import create_engine
 import pymysql
 
 
-table_level_list = ['_1m', '_5m', '_15m', '_1h', '_1d']
+#read data setting
+data_read_user_1 = 'wang_2'
+data_read_psd_1 = 'wang_2'
+data_read_db_1 = 'python_merge'
+
+data_read_user_2 = 'wang_2'
+data_read_psd_2 = 'wang_2'
+data_read_db_2 = 'wang_2'
+
+#write data setting
+data_write_user = 'ctp_user'
+data_write_psd = 'ctp_password'
+data_write_db = 'ctp_merged_mq'
+
+#merge table list
+table_level_list = ['5s']
+#table_level_list = ['1m', '5m', '15m', '1h', '1d']
+#table_name_list = ['ih', 'ic', 'ru', 'rb']
 table_name_list = ['if', 'ih', 'ic', 'ru', 'rb']
 
+
+#data merge cycle
 for name in table_name_list:
     for level in table_level_list:
-        table_name = name + level
+        table_name = name + '_' + level
         print("Enter Mysql wang1 " + table_name)
-        engine = create_engine('mysql+pymysql://ctp_user:ctp_password'
-                               '@127.0.0.1/ctp_merged_mq?charset=utf8')
+        engine = create_engine('mysql+pymysql://'
+                               + data_read_user_1 + ':'
+                               + data_read_psd_1 +
+                               '@127.0.0.1/' +
+                               data_read_db_1 +
+                               '?charset=utf8')
         df = pd.read_sql(sql="select * from " + table_name, con=engine)
         print("Out Mysql wang1 " + table_name)
         wang1 = df
         wang1 = pd.DataFrame(wang1)
 
         print("Enter Mysql wang2 " + table_name)
-        engine = create_engine('mysql+pymysql://wang_2:wang_2'
-                               '@127.0.0.1/wang_2?charset=utf8')
+        engine = create_engine('mysql+pymysql://'
+                               + data_read_user_2 + ':'
+                               + data_read_psd_2 +
+                               '@127.0.0.1/' +
+                               data_read_db_2 +
+                               '?charset=utf8')
         df = pd.read_sql(sql="select * from " + table_name, con=engine)
         print("Out Mysql wang2 " + table_name)
         wang2 = df
         wang2 = pd.DataFrame(wang2)
+        #type_name = [name] * len(wang2['type'])
+        #wang2['type'] = type_name
 
         merged_data = pd.merge(wang1, wang2, on='utc', how='outer')
 
@@ -151,11 +180,11 @@ for name in table_name_list:
         out['counter'] = counter
         print('write mysql')
         connect = pymysql.connect(
-            user="wang_2",
-            password="wang_2",
+            user=data_write_user,
+            password=data_write_psd,
             host="127.0.0.1",
             port=3306,
-            db="python_merge",
+            db=data_write_db,
             charset="utf8"
         )
         conn = connect.cursor()  # 创建操作游标
@@ -173,8 +202,12 @@ for name in table_name_list:
               "PRIMARY KEY (`utc`))"
         conn.execute(sql)  # 创建表
 
-        engine = create_engine(
-            'mysql+pymysql://wang_2:wang_2@127.0.0.1/python_merge?charset=utf8')
+        engine = create_engine('mysql+pymysql://'
+                               + data_write_user + ':'
+                               + data_write_psd +
+                               '@127.0.0.1/' +
+                               data_write_db +
+                               '?charset=utf8')
         out.to_sql(table_name, engine, if_exists='append', index=False)
 
         conn.close()  # 关闭游标连接

@@ -15,6 +15,9 @@ import strategy
 import sys
 sys.path.append('D:\\python_project\\statistics')
 from statistics_functions import compute_r
+sys.path.append('D:\\python_project\\machine_learning')
+import py_GBM
+import data_analyze
 
 #initiate settings
 ai_settings = Settings()
@@ -26,27 +29,33 @@ target = fuc.read_sql_wang2(ai_settings)
 target = pd.DataFrame(target)
 
 #select close price for compute
-data_open = target.loc[0:, ai_settings.fetch_open]
-data_high = target.loc[0:, ai_settings.fetch_high]
-data_low = target.loc[0:, ai_settings.fetch_low]
-data_close = target.loc[0:, ai_settings.fetch_close]
-data_date = target.loc[0:, ai_settings.fetch_date]
+data_open = np.array(target.loc[py_GBM.train_len:, ai_settings.fetch_open])
+data_high = np.array(target.loc[py_GBM.train_len:, ai_settings.fetch_high])
+data_low = np.array(target.loc[py_GBM.train_len:, ai_settings.fetch_low])
+data_close = np.array(target.loc[py_GBM.train_len:, ai_settings.fetch_close])
+data_date = target.loc[py_GBM.train_len:,
+            ai_settings.fetch_date].values.tolist()
 #data_date = pd.to_datetime(data_date)
 #data_date = fuc.to_date(data_date)
+print("backtesting len: " + str(len(data_close)))
+
+rsi = fuc.compute_rsi(data_close, 9)
+macd = fuc.compute_macd(data_close, 12, 26, 9)
 
 #compute result of target index
-target_profit_day = fuc.frofit_per(data_close)
+roll = 1
+target_profit_day = fuc.profit_per(data_close)
+profit_per_roll = fuc.compute_roll(target_profit_day, roll)
 target_direction = [1] * len(data_close)
 target_net_value = fuc.compute_index_net(data_close, result_show)
 target_max_retracement = result_show.easy_max_retracement
 
 # fetch direction from strategy
 direction = strategy.macd_ema_strategy(data_close, ai_settings, 9, 26)
-direction_mix = strategy.high_low_strategy(data_close, data_low, data_high,
-    ai_settings, 0.05)
-direction_mix_2 = strategy.rsi_strategy(data_close, ai_settings, 9, 10, 90)
+direction_mix = strategy.regression_strategy(ai_settings)
+direction_mix_2 = strategy.rsi_strategy(data_close, ai_settings, 9, 30, 70)
 direction_final_pro = fuc.direction_mix(direction, direction_mix)
-direction_final = fuc.direction_final(direction, direction,
+direction_final = fuc.direction_final(direction_mix, direction_mix,
     data_date, ai_settings)
 
 # compute result of strategy

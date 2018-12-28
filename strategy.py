@@ -1,11 +1,10 @@
-import pandas as pd
-import random as rd
-import matplotlib.pyplot as plt
-from sqlalchemy import create_engine
-
-from strategy_settings import Settings
 import strategy_functions as fuc
-from result import Result
+import sys
+sys.path.append('D:\\python_project\\machine_learning')
+import py_GBM
+
+
+
 
 
 def macd_strategy(data_close, ai_settings, mid, long, short):
@@ -22,7 +21,7 @@ def macd_strategy(data_close, ai_settings, mid, long, short):
         elif macd[i - roll] < 0 and ai_settings.only_buy == False:
             direction[i] = -1
         else:
-            direction[i] = 0
+            direction[i] = 'follow'
     return direction
 
 
@@ -124,9 +123,9 @@ def rsi_strategy(data_close, ai_settings, cycle, small, big):
 
     # compute condition
     for i in range(roll, len(data_close)):
-        if rsi[i - roll] < small:
+        if rsi[i - roll] > small:
             direction[i] = 1
-        elif rsi[i - roll] > big and ai_settings.only_buy == False:
+        elif rsi[i - roll] < big and ai_settings.only_buy == False:
             direction[i] = -1
         else:
             direction[i] = 'follow'
@@ -147,6 +146,24 @@ def high_low_strategy(data_close, data_low, data_high, ai_settings, plus):
             direction[i] = 1
         elif ema_high[i - roll] * (1 + plus) < data_close[i - roll] and \
             ai_settings.only_buy == False:
+            direction[i] = -1
+        else:
+            direction[i] = 'follow'
+    return direction
+
+
+def regression_strategy(ai_settings):
+    print("get strategy...")
+    # initiate variate
+    regression = py_GBM.d_prediction
+    direction = [0] * len(regression)
+    roll = 0
+
+    # compute condition
+    for i in range(len(regression)):
+        if regression[i] > 0.0:
+            direction[i] = 1
+        elif regression[i] < -0.0 and ai_settings.only_buy == False:
             direction[i] = -1
         else:
             direction[i] = 'follow'
