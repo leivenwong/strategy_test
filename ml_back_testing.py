@@ -11,6 +11,7 @@ sys.path.append('D:\\python_project\\statistics')
 from statistics_functions import compute_r
 sys.path.append('D:\\python_project\\machine_learning')
 import use_trained_model
+import data_analyze
 
 #initiate settings
 ai_settings = Settings()
@@ -18,15 +19,19 @@ result_show = result.Result()
 result_show.reset_net_value()
 
 #read raw data
-target = fuc.read_sql_wang2(ai_settings)
+target = data_analyze.target
 target = pd.DataFrame(target)
 
 #select close price for compute
-data_open = np.array(target.loc[len(use_trained_model.xTrain):, ai_settings.fetch_open])
-data_high = np.array(target.loc[len(use_trained_model.xTrain):, ai_settings.fetch_high])
-data_low = np.array(target.loc[len(use_trained_model.xTrain):, ai_settings.fetch_low])
-data_close = np.array(target.loc[len(use_trained_model.xTrain):, ai_settings.fetch_close])
-data_date = target.loc[len(use_trained_model.xTrain):,
+data_open = np.array(target.loc[use_trained_model.train_len:,
+                     ai_settings.fetch_open])
+data_high = np.array(target.loc[use_trained_model.train_len:,
+                     ai_settings.fetch_high])
+data_low = np.array(target.loc[use_trained_model.train_len:,
+                    ai_settings.fetch_low])
+data_close = np.array(target.loc[use_trained_model.train_len:,
+                      ai_settings.fetch_close])
+data_date = target.loc[use_trained_model.train_len:,
             ai_settings.fetch_date].values.tolist()
 #data_date = pd.to_datetime(data_date)
 #data_date = fuc.to_date(data_date)
@@ -67,10 +72,11 @@ result_show.update_net_value(net_value[-1])
 
 #print result if name is main
 cycle_year = 250
-if ai_settings.fetch_table[-2:] == '5m':
+if use_trained_model.ai_settings.fetch_table[-2:] == '5m':
     cycle_year = 250 * 4 * 60 / 5
-if ai_settings.fetch_table[-2:] == '1m':
+if use_trained_model.ai_settings.fetch_table[-2:] == '1m':
     cycle_year = 250 * 4 * 60
+print('table:' + use_trained_model.ai_settings.fetch_table)
 
 if __name__ == '__main__':
     # print result
@@ -109,7 +115,7 @@ if __name__ == '__main__':
 
     if len(data_close) < 70000:
         print("writting excel...")
-        out.to_excel('backtesting.xlsx', 'Sheet1')
+        out.to_excel('ml_backtesting.xlsx', 'Sheet1')
 
 #show plot if settings is true
 if ai_settings.draw_plot and __name__ == '__main__' \

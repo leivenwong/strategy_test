@@ -45,7 +45,7 @@ class Settings():
         self.stopwin = 0.6
 
         #if jump close and open
-        self.jump_night = False
+        self.jump_night = True
 
         #if only buy
         self.only_buy = False

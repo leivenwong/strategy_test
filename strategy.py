@@ -1,7 +1,7 @@
 import strategy_functions as fuc
 import sys
 sys.path.append('D:\\python_project\\machine_learning')
-import py_GBM
+import use_trained_model
 
 
 
@@ -155,7 +155,8 @@ def high_low_strategy(data_close, data_low, data_high, ai_settings, plus):
 def regression_strategy(ai_settings):
     print("get strategy...")
     # initiate variate
-    regression = py_GBM.d_prediction
+    test = use_trained_model.xTest
+    regression = use_trained_model.use_trained_model(test)
     direction = [0] * len(regression)
     roll = 0
 

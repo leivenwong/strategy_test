@@ -3,10 +3,8 @@ import random as rd
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 import datetime
-import time
 
 from strategy_settings import Settings
-from result import Result
 
 
 def read_sql_merged(ai_settings):
